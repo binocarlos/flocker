@@ -1,7 +1,7 @@
 flocker
 -------
 
-treat a flock of dockers as a single docker
+treat a flock of dockers as a single docker similar to the [libswarm](https://github.com/docker/libswarm) aggregate backend
 
 ## install
 
@@ -12,6 +12,8 @@ $ npm install flocker
 ## usage
 
 A flocker proxy will route HTTP requests from the standard docker client back to a collection of docker hosts.
+
+You pass functions to decide on routing and to list the current inventory.
 
 ```js
 var http = require('http')

@@ -42,14 +42,15 @@ function stopServer(){
   server.close()
 }
 
-
 function runDocker(args, done){
   args = args || []
+
   var ps = cp.spawn('docker', args, {
     stdio:'pipe'
   })
 
   ps.stdout.pipe(concat(function(result){
+    console.log(result.toString())
     done(null, result.toString())
   }))
 
@@ -62,18 +63,17 @@ function runDocker(args, done){
   })
 }
 
-function runProxyDocker(args, done){
+function runProxyDocker(cmd, args, done){
   runDocker([
+    cmd,
     '-H',
     'tcp://192.168.8.120:8080'
   ].concat(args), done)
 }
 
 function createStub(name, done){
-
-  var local = path.join(__dirname, 'stub.js')
-
   runDocker([
+    'run',
     '-d',
     '-v',
     __dirname + ':/app',
