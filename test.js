@@ -6,6 +6,9 @@
 
   https://github.com/binocarlos/viking-dev
   
+
+  the point of these tests is to ensure the standard cli docker client
+  works with the proxy
 */
 
 var fs = require('fs')
@@ -78,16 +81,15 @@ function runDocker(args, done){
   })
 }
 
-function runProxyDocker(cmd, args, done){
+function runProxyDocker(args, done){
   runDocker([
-    cmd,
     '-H',
     'tcp://192.168.8.120:8080'
   ].concat(args), done)
 }
 
 function createStub(name, done){
-  runDocker([
+  runProxyDocker([
     'run',
     '-d',
     '-v',
@@ -129,30 +131,35 @@ function destroyStubs(done){
 
 startServer()
 
-tape('create stubs', function(t){
-  createStubs(function(){
-    t.end()
-  })
-})
 
 tape('start server', function(t){
   setTimeout(function(){
     t.end()
-  }, 100)
+  }, 1000)
+})
+
+
+tape('create stubs', function(t){
+  createStubs(function(){
+    setTimeout(function(){
+      t.end()
+    }, 1000)
+  })
 })
 
 tape('docker ps', function(t){
 
-  runDocker([
-    'ps',
-    '-a'
+  runProxyDocker([
+    'ps'
   ], function(err, result){
     if(err){
       t.fail(err, 'ps')
       t.end()
       return
     }
-    console.log(result)
+    t.ok(result.indexOf('stub1')>0, 'stub1')
+    t.ok(result.indexOf('stub2')>0, 'stub1')
+    t.ok(result.indexOf('stub3')>0, 'stub1')
     t.end()
   })
 })
