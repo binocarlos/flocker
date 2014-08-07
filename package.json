@@ -27,6 +27,7 @@
     "tape": "^2.14.0"
   },
   "dependencies": {
-    "hyperprox": "^1.1.1"
+    "hyperprox": "^1.1.1",
+    "routes-router": "^4.1.0"
   }
 }

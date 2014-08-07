@@ -57,23 +57,43 @@ Create a new docker proxy
 
 ## events
 
-#### `dockers.on('route', function(info, next){})`
+#### `dockers.on('create', function(info, next){})`
 
-Called when the proxy needs to route a request to a single container
+Called when a new container needs allocating to a docker server
+
+This function is your chance to customize your network by changing what server / environment variables etc
 
 info is an object with the following properties:
 
- * id - the container id
  * name - the name of the container
- * req - the actual request
+ * container - the JSON object describing the container
 
 Call next with a string representing the docker server to send the request to e.g. `127.0.0.1:2375`
+
+Any changes made to the info will apply to the forwarded request - this lets you intercepts create requests and route them where you choose and change environment variables etc
+
+```js
+dockers.on('create', function(info, next){
+	doSomeAsyncStuff(function(err, meta){
+		info.container.name = meta.name
+		next(null, meta.server)
+	})
+})
+```
 
 #### `dockers.on('list', function(next){})`
 
 Called when the proxy needs a list of all current servers
 
 An array of docker endpoint strings should be returned
+
+```js
+var dockerServers = ['192.168.8.120:2375','192.168.8.121:2375','192.168.8.122:2375']
+
+dockers.on('list', function(next){
+	next(null, dockerServers.join(','))
+})
+```
 
 ## license
 
