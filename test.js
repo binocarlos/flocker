@@ -5,7 +5,6 @@ var flocker = require('./')
 var tape     = require('tape')
 var http = require('http')
 var url = require('url')
-var hyperquest = require('hyperquest')
 var concat = require('concat-stream')
 
 var allServers = [

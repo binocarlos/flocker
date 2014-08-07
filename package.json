@@ -22,9 +22,8 @@
   },
   "homepage": "https://github.com/binocarlos/flocker",
   "devDependencies": {
+    "concat-stream": "^1.4.6",
     "tape": "^2.14.0"
   },
-  "dependencies": {
-    
-  }
+  "dependencies": {}
 }
