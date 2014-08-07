@@ -1,3 +1,13 @@
+/*
+
+  NOTE - this test assumes 3 servers with docker
+
+  it uses the Vagrantfile from:
+
+  https://github.com/binocarlos/viking-dev
+  
+*/
+
 var fs = require('fs')
 var cp = require('child_process')
 var path = require('path')
@@ -17,12 +27,13 @@ var allServers = [
 var dockers = flocker()
 
 dockers.on('request', function(req, res){
+  console.log('-------------------------------------------');
+  console.log('-------------------------------------------');
+  console.log('-------------------------------------------');
   console.log(req.url)
 })
 
 dockers.on('route', function(info, next){
-  console.log('-------------------------------------------');
-  console.log('route')
   next(null, allServers[0])
 })
 
@@ -50,12 +61,16 @@ function runDocker(args, done){
   })
 
   ps.stdout.pipe(concat(function(result){
-    console.log(result.toString())
     done(null, result.toString())
   }))
 
   ps.stderr.pipe(concat(function(result){
-    console.log(result.toString())
+    var err = result.toString()
+    if(err && err.length>0){
+      console.log('-------------------------------------------');
+      console.log('error')
+      console.log(err)
+    }
   }))
 
   ps.on('error', function(error){
@@ -88,13 +103,22 @@ function createStub(name, done){
 function createStubs(done){
   async.series([
     function(next){
-      createStub('stub1', next)
+      createStub('stub1', function(err, result){
+        console.log(result)
+        next()
+      })
     },
     function(next){
-      createStub('stub2', next)
+      createStub('stub2', function(err, result){
+        console.log(result)
+        next()
+      })
     },
     function(next){
-      createStub('stub3', next)
+      createStub('stub3', function(err, result){
+        console.log(result)
+        next()
+      })
     }
   ], done)
 }

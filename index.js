@@ -11,6 +11,8 @@ function Flocker(){
 		}, next)
 	})
 	this.proxy.on('request', function(req, res){
+		console.log('-------------------------------------------');
+		console.log('flcoker req')
 		self.emit('request', req, res)
 	})
 	this.proxyhandler = this.proxy.handler()
