@@ -1,3 +1,4 @@
+var hyperprox = require('hyperprox')
 var EventEmitter = require('events').EventEmitter
 var util = require('util')
 
