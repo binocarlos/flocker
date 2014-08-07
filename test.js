@@ -28,11 +28,12 @@ function startServer(){
   })
 
   dockers.on('list', function(next){
-    next(null, allServers)
+    next(null, allServers.splice(1))
   })
 
   server = http.createServer(function(req, res){
-    dockers.handle(req, res)  
+    //dockers.handle(req, res)
+    res.end('ok')
   })
 
   server.listen(8080)
@@ -42,21 +43,49 @@ function stopServer(){
   server.close()
 }
 
-tape('docker ps', function(t){
-
+function runDocker(args, done){
   var ps = cp.spawn('docker', [
     '-H',
-    'http://192.168.8.120:8080',
-    'ps'
-  ])
+    'tcp://192.168.8.120:8080'
+  ].concat(args), {
+    stdio:'pipe'
+  })
 
-  ps.pipe(concat(function(result){
-    result = result.toString()
+  ps.stdout.pipe(concat(function(result){
+    done(null, result.toString())
+  }))
+
+  ps.stderr.pipe(concat(function(result){
+    done(result.toString())
   }))
 
   ps.on('error', function(error){
-    t.fail(err, 'error')
-    t.end()
-    return
+    done(error)
   })
+}
+
+tape('start server', function(t){
+  startServer()
+  setTimeout(function(){
+    t.end()
+  }, 100)
+})
+
+tape('docker ps', function(t){
+  runDocker([
+
+  ], function(err, result){
+    if(err){
+      t.fail(err, 'ps')
+      t.end()
+      return
+    }
+    console.log(result)
+    t.end()
+  })
+})
+
+tape('stop server', function(t){
+  stopServer()
+  t.end()
 })
