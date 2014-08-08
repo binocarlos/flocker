@@ -4,7 +4,7 @@
   "description": "treat a flock of dockers as a single docker",
   "main": "index.js",
   "scripts": {
-    "test": "node test.js"
+    "test": "node test/index.js"
   },
   "repository": {
     "type": "git",
@@ -27,8 +27,11 @@
     "tape": "^2.14.0"
   },
   "dependencies": {
+    "async": "^0.9.0",
     "from2": "^1.2.0",
     "hyperprox": "^1.1.1",
+    "hyperquest": "^0.3.0",
+    "minimist": "^0.2.0",
     "routes-router": "^4.1.0"
   }
 }

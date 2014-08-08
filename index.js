@@ -11,6 +11,9 @@ function Flocker(){
 	this.router = Router()
 	this.handlers = Handlers()
 	this.cluster = Cluster()
+
+	// the api handlers that target a specific server
+	// will set the X-FLOCKER-HOST header to do the routing
 	this.proxy = hyperprox(function(req, next){
 		if(!req.headers['X-FLOCKER-HOST']){
 			return next('no viking docker host found')

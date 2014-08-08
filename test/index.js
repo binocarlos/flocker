@@ -31,6 +31,7 @@ var dockers = flocker()
 
 dockers.on('request', function(req, res){
   console.log('-------------------------------------------');
+  console.log(req.method)
   console.dir(req.url)
 })
 
@@ -86,6 +87,14 @@ function runProxyDocker(args, done){
   ].concat(args), done)
 }
 
+function createStubImage(name, done){
+  cp.exec('docker build -t flocker/' + name + ' ' + __dirname, done)
+}
+
+function removeStubImage(name, done){
+  cp.exec('docker rmi flocker/' + name, done)
+}
+
 function createStub(name, done){
   runProxyDocker([
     'run',
@@ -96,11 +105,60 @@ function createStub(name, done){
     'APPLES=10',
     '--name',
     name,
-    'binocarlos/nodejs',
+    'flocker/' + name,
     '/app/test/stub.js'
   ], done)
   
 }
+
+
+function createStubImages(done){
+  async.series([
+    function(next){
+      createStubImage('stub1', function(err, result){
+        console.log(result)
+        next()
+      })
+    },
+    function(next){
+      createStubImage('stub2', function(err, result){
+        console.log(result)
+        next()
+      })
+    },
+    function(next){
+      createStubImage('stub3', function(err, result){
+        console.log(result)
+        next()
+      })
+    }
+  ], done)
+}
+
+
+function removeStubImages(done){
+  async.series([
+    function(next){
+      removeStubImage('stub1', function(err, result){
+        console.log(result)
+        next()
+      })
+    },
+    function(next){
+      removeStubImage('stub2', function(err, result){
+        console.log(result)
+        next()
+      })
+    },
+    function(next){
+      removeStubImage('stub3', function(err, result){
+        console.log(result)
+        next()
+      })
+    }
+  ], done)
+}
+
 
 function createStubs(done){
   async.series([
@@ -138,6 +196,14 @@ tape('start server', function(t){
   }, 1000)
 })
 
+
+tape('create stub images', function(t){
+  createStubImages(function(){
+    setTimeout(function(){
+      t.end()
+    }, 1000)
+  })
+})
 
 tape('create stubs', function(t){
   createStubs(function(){

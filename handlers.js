@@ -45,7 +45,10 @@ function ping(emitter){
 
 function ps(emitter){
 	return function(req, res){
-		
+		console.log('-------------------------------------------');
+		console.log('PS')
+		console.log('-------------------------------------------');
+		console.dir(req.headers)
 	}
 }
 
