@@ -14,7 +14,7 @@
 var fs = require('fs')
 var cp = require('child_process')
 var path = require('path')
-var flocker = require('./')
+var flocker = require('../')
 var tape     = require('tape')
 var http = require('http')
 var url = require('url')
@@ -30,7 +30,8 @@ var allServers = [
 var dockers = flocker()
 
 dockers.on('request', function(req, res){
-  
+  console.log('-------------------------------------------');
+  console.dir(req.url)
 })
 
 dockers.on('allocate', function(name, container, next){
@@ -96,7 +97,7 @@ function createStub(name, done){
     '--name',
     name,
     'binocarlos/nodejs',
-    '/app/stub.js'
+    '/app/test/stub.js'
   ], done)
   
 }

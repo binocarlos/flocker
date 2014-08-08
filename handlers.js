@@ -23,7 +23,7 @@ function create(emitter){
 				return
 			}
 			emitter.emit('allocate', name, container, function(err, address){
-				req.headers['X-VIKING-HOST'] = address
+				req.headers['X-FLOCKER-HOST'] = address
 				var newreq = utils.cloneReq(req, JSON.stringify(container))
 				emitter.emit('proxy', newreq, res)
 			})
