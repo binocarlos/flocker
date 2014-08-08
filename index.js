@@ -13,16 +13,19 @@ function Flocker(){
 		if(!req.headers['X-VIKING-HOST']){
 			return next('no viking docker host found')
 		}
+		var address = req.headers['X-VIKING-HOST']
+		address = address.indexOf('http')==0 ? address : 'http://' + address
 		next(null, req.headers['X-VIKING-HOST'])
 	})
-	this.handlers.on('allocate', function(info, next){
-		self.emit('allocate', info, next)
+	this.proxyhandler = this.proxy.handler()
+	this.handlers.on('allocate', function(name, container, next){
+		self.emit('allocate', name, container, next)
 	})
 	this.handlers.on('list', function(next){
 		self.emit('list', next)
 	})
 	this.handlers.on('proxy', function(req, res){
-		self.proxy(res, res)
+		self.proxyhandler(req, res)
 	})
 	this.router.on('create', this.handlers.create)
 	this.router.on('ping', this.handlers.ping)

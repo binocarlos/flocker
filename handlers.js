@@ -1,4 +1,7 @@
+var url = require('url')
 var EventEmitter = require('events').EventEmitter
+var concat = require('concat-stream')
+var utils = require('./utils')
 
 /*
 
@@ -7,7 +10,25 @@ var EventEmitter = require('events').EventEmitter
 */
 function create(emitter){
 	return function(req, res){
+
+		var parsedURL = url.parse(req.url, true)
+		var name = parsedURL.query.name
+		
+		req.pipe(concat(function(container){
+			try{
+				container = JSON.parse(container.toString())	
+			} catch(err){
+				res.statusCode = 500
+				res.end(err)
+				return
+			}
+			emitter.emit('allocate', name, container, function(err, address){
+				req.headers['X-VIKING-HOST'] = address
+				var newreq = utils.cloneReq(req, JSON.stringify(container))
+				emitter.emit('proxy', newreq, res)
+			})
 			
+		}))
 	}
 }
 

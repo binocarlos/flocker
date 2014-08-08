@@ -22,10 +22,14 @@ var flocker = require("flocker")
 var dockers = flocker()
 
 // we need to route a container onto a single server
-dockers.on('allocate', function(info, next){
-	// use info to decide which server to route to
-	chooseServer(info, function(err, address){
+dockers.on('allocate', function(name, container, next){
+	// use container info to decide which server to route to
+	chooseServer(name, container, function(err, address){
 		if(err) return next(err)
+
+		// we can change the container on the way through
+		container['property'] = ''
+		
 		// address is 127.0.0.1:2375 style string
 		next(null, address)
 	})

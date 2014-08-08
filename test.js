@@ -30,13 +30,10 @@ var allServers = [
 var dockers = flocker()
 
 dockers.on('request', function(req, res){
-  console.log('-------------------------------------------');
-  console.log('-------------------------------------------');
-  console.log('-------------------------------------------');
-  console.log(req.url)
+  
 })
 
-dockers.on('allocate', function(info, next){
+dockers.on('allocate', function(name, container, next){
   next(null, allServers[0])
 })
 
@@ -94,6 +91,8 @@ function createStub(name, done){
     '-d',
     '-v',
     __dirname + ':/app',
+    '-e',
+    'APPLES=10',
     '--name',
     name,
     'binocarlos/nodejs',
