@@ -20,13 +20,13 @@ module.exports = function(){
 	router.addRoute('/:version/containers/create', function(req, res){
 		console.log('-------------------------------------------');
 		console.log('create')
-		emitter.emit('create', res, res)
+		emitter.emit('create', req, res)
 	})
 
 	router.addRoute('/*', function(req, res){
 		console.log('-------------------------------------------');
 		console.log('generic')
-		emitter.emit('generic', res, res)
+		emitter.emit('generic', req, res)
 	})
 
 	emitter.handler = function(req, res){

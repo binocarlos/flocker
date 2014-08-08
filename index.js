@@ -37,6 +37,7 @@ Flocker.prototype.handler = function(){
 }
 
 Flocker.prototype.handle = function(req, res){
+	this.emit('request', req, res)
 	this.router.handler(req, res)
 }
 

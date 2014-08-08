@@ -36,7 +36,7 @@ dockers.on('request', function(req, res){
   console.log(req.url)
 })
 
-dockers.on('route', function(info, next){
+dockers.on('allocate', function(info, next){
   next(null, allServers[0])
 })
 
