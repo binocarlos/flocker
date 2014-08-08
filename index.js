@@ -6,27 +6,31 @@ var Handlers = require('./handlers')
 
 function Flocker(){
 	EventEmitter.call(this)
-	var self = this;
-	this.handlers = Handlers()
+	var self = this;	
 	this.router = Router()
+	this.handlers = Handlers()
 	this.proxy = hyperprox(function(req, next){
-		next(null, req._dockerHost)
+		if(!req.headers['X-VIKING-HOST']){
+			return next('no viking docker host found')
+		}
+		next(null, req.headers['X-VIKING-HOST'])
 	})
-	this.proxyhandler = this.proxy.handler()
-	this.setupRouterEvents()
+	this.handlers.on('allocate', function(info, next){
+		self.emit('allocate', info, next)
+	})
+	this.handlers.on('list', function(next){
+		self.emit('list', next)
+	})
+	this.handlers.on('proxy', function(req, res){
+		self.proxy(res, res)
+	})
+	this.router.on('create', this.handlers.create)
+	this.router.on('ping', this.handlers.ping)
+	this.router.on('ps', this.handlers.ps)
+	this.router.on('targeted', this.handlers.targeted)
 }
 
 util.inherits(Flocker, EventEmitter)
-
-Flocker.prototype.setupRouterEvents = function(){
-	this.router.on('create', )
-}
-
-Flocker.prototype.route = function(done){
-	this.emit('route', {
-		req:req
-	}, next)
-}
 
 Flocker.prototype.handler = function(){
 	return this.handle.bind(thid)

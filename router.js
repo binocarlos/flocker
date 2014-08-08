@@ -5,10 +5,13 @@ module.exports = function(){
 	var emitter = new EventEmitter()
 	var router = Router({
 	  errorHandler: function (req, res) {
+	  	console.log('-------------------------------------------');
+	  	console.log(';error')
 	    res.statusCode = 500
 	    res.end("no u")
 	  },
 	  notFound: function (req, res) {
+	  	console.log('not found')
 	    res.statusCode = 404
 	    res.end("oh noes")
 	  }

@@ -22,7 +22,7 @@ var flocker = require("flocker")
 var dockers = flocker()
 
 // we need to route a container onto a single server
-dockers.on('route', function(info, next){
+dockers.on('allocate', function(info, next){
 	// use info to decide which server to route to
 	chooseServer(info, function(err, address){
 		if(err) return next(err)
@@ -57,7 +57,7 @@ Create a new docker proxy
 
 ## events
 
-#### `dockers.on('create', function(info, next){})`
+#### `dockers.on('allocate', function(info, next){})`
 
 Called when a new container needs allocating to a docker server
 
@@ -73,7 +73,7 @@ Call next with a string representing the docker server to send the request to e.
 Any changes made to the info will apply to the forwarded request - this lets you intercepts create requests and route them where you choose and change environment variables etc
 
 ```js
-dockers.on('create', function(info, next){
+dockers.on('allocate', function(info, next){
 	doSomeAsyncStuff(function(err, meta){
 		info.container.name = meta.name
 		next(null, meta.server)
