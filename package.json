@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "async": "^0.9.0",
+    "debug": "^1.0.4",
     "from2": "^1.2.0",
     "hyperprox": "^2.0.0",
     "hyperquest": "^0.3.0",

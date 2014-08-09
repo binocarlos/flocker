@@ -13,21 +13,28 @@ function Flocker(){
 	this.handlers = Handlers()
 	this.cluster = Cluster()
 
-	this.handlers.on('allocate', function(name, container, next){
-		self.emit('allocate', name, container, function(err, address){
-			if(err) return next(err)
-		})
+	// the api handlers that target a specific server
+	// will set the X-FLOCKER-HOST header to do the routing
+	this.backends = hyperprox(function(req, next){
+		if(!req.headers['X-FLOCKER-HOST']){
+			return next('no flocker host found')
+		}
+		var address = req.headers['X-FLOCKER-HOST']
+		address = address.indexOf('http')==0 ? address : 'http://' + address
+		next(null, req.headers['X-FLOCKER-HOST'])
 	})
 
-	// key value store
-	this.handlers.on('get', function(key, next){
-		self.emit('get', key, next)
+	this.backendsproxy = this.backends.handler()
+
+	// choose a server for a new container
+	this.handlers.on('route', function(info, next){
+		self.emit('route', info, next)
 	})
-	this.handlers.on('set', function(key, value, next){
-		self.emit('set', key, value, next)
-	})
-	this.handlers.on('delete', function(key, next){
-		self.emit('delete', key, next)
+
+	// handle a direct proxy
+	this.handlers.on('proxy', function(req, res, address){
+		req.headers['X-FLOCKER-HOST'] = address
+		self.backendsproxy(req, res)
 	})
 
 	// we need a list of servers
