@@ -20,7 +20,7 @@ dockers.on('route', function(info, next){
 })
 
 dockers.on('list', function(next){
-  next(null, allServers.splice(1))
+  next(null, allServers)
 })
 
 var server = http.createServer(function(req, res){

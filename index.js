@@ -3,7 +3,6 @@ var EventEmitter = require('events').EventEmitter
 var util = require('util')
 var Router = require('./router')
 var Handlers = require('./handlers')
-var Cluster = require('./cluster')
 var through = require('through2')
 
 function Flocker(){
@@ -11,7 +10,6 @@ function Flocker(){
 	var self = this;	
 	this.router = Router()
 	this.handlers = Handlers()
-	this.cluster = Cluster()
 
 	// the api handlers that target a specific server
 	// will set the X-FLOCKER-HOST header to do the routing
@@ -41,19 +39,12 @@ function Flocker(){
 	this.handlers.on('list', function(next){
 		self.emit('list', next)
 	})
-	this.cluster.on('list', function(next){
-		self.emit('list', next)
-	})
-
-	// we need to find a container in the cluster
-	this.handlers.on('locate', function(container, done){
-		self.cluster.find(container, done)
-	})
+	this.router.on('containers:json', this.handlers.listContainers)
 	this.router.on('containers:create', this.handlers.createContainer)
 	this.router.on('images:create', this.handlers.createImage)
-	this.router.on('ping', this.handlers.ping)
-	this.router.on('ps', this.handlers.ps)
-	this.router.on('targeted', this.handlers.targeted)
+	//this.router.on('ping', this.handlers.ping)
+	//this.router.on('ps', this.handlers.ps)
+	//this.router.on('targeted', this.handlers.targeted)
 }
 
 util.inherits(Flocker, EventEmitter)

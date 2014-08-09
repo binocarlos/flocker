@@ -31,21 +31,26 @@ var allServers = [
 var dockers = flocker()
 
 dockers.on('request', function(req, res){
-  console.log('-------------------------------------------');
   console.log(req.method)
   console.dir(req.url)
 })
 
+function getAddress(container){
+  return allServers[parseInt(container.replace(/\D/g, ''))-1]
+}
+var lastContainer = null
+
 dockers.on('route', function(info, next){
-  console.log('-------------------------------------------');
-  console.log('allocate')
-  console.dir(info)
-  next(null, allServers[0])
+
+  if(info.container){
+    lastContainer = info.name
+  }
+  console.log(lastContainer)
+  console.log(getAddress(lastContainer))
+  next(null, getAddress(lastContainer))
 })
 
 dockers.on('list', function(next){
-  console.log('-------------------------------------------');
-  console.log('list')
   next(null, allServers.splice(1))
 })
 
@@ -103,27 +108,35 @@ function runProxyDockerStream(args, done){
   ].concat(args), done) 
 }
 
-function removeStubImage(address, done){
+function removeStub(address, name, done){
   runTargetedDocker(address, [
-    'rmi',
-    '--no-prune',
-    'binocarlos/bring-a-ping'
+    'stop',
+    name
   ], function(err, result){
-    console.log(result)
-    done()
+    runTargetedDocker(address, [
+      'rm',
+      name
+    ], function(err, result){
+      runTargetedDocker(address, [
+        'rmi',
+        '--no-prune',
+        'binocarlos/bring-a-ping'
+      ], done)
+    })
   })
 }
 
-function removeStubImages(done){
+function removeStubs(done){
+
   async.series([
     function(next){
-      removeStubImage('192.168.8.120:2375', next)
+      removeStub('192.168.8.120:2375', 'stub1', next)
     },
     function(next){
-      removeStubImage('192.168.8.121:2375', next)
+      removeStub('192.168.8.121:2375', 'stub2', next)
     },
     function(next){
-      removeStubImage('192.168.8.122:2375', next)
+      removeStub('192.168.8.122:2375', 'stub3', next)
     },
   ], done)
 }
@@ -143,14 +156,8 @@ function createStub(name, done){
 function createStubs(done){
   async.series([
     function(next){
-      createStub('stub1', function(err, result){
-        console.log('-------------------------------------------');
-        console.log('-------------------------------------------');
-        console.log('after')
-        console.log(result)
-        next()
-      })
-    }/*,
+      createStub('stub1', done)
+    },
     function(next){
       createStub('stub2', function(err, result){
         console.log(result)
@@ -162,25 +169,13 @@ function createStubs(done){
         console.log(result)
         next()
       })
-    }*/
+    }
   ], done)
 }
 
-function destroyStubs(done){
-  cp.exec("docker stop stub1 stub2 stub3 && docker rm stub1 stub2 stub3", done)
-}
-
-function removeImage(done){
-  cp.exec("docker rmi --no-prune binocarlos/bring-a-ping", done)
-}
-
-
 tape('destroy stubs', function(t){
-  destroyStubs(function(){
-    removeImage(function(){
-      t.end()  
-    })
-    
+  removeStubs(function(){
+    t.end()
   })
 })
 
@@ -203,7 +198,6 @@ tape('create stubs', function(t){
 })
 
 /*
-
 tape('docker ps', function(t){
 
   runProxyDocker([
@@ -223,10 +217,11 @@ tape('docker ps', function(t){
 */
 
 tape('destroy stubs', function(t){
-  destroyStubs(function(){
+  removeStubs(function(){
     t.end()
   })
 })
+
 
 tape('stop server', function(t){
   stopServer()

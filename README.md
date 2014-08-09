@@ -29,13 +29,12 @@ dockers.on('list', function(next){
 	listServers(next)
 })
 
-var stash = {}
 // we need to route a container onto a single server
 dockers.on('route', function(info, next){
 	if(info.container){
 		// route based on the container info
 		var containerName = info.name
-		var contgainerInfo = info.container
+		var containerInfo = info.container
 		next(null, address)
 	}
 	else if(info.image){

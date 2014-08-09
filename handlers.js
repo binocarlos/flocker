@@ -5,10 +5,11 @@ var async = require('async')
 var through = require('through2')
 var hyperquest = require('hyperquest')
 var utils = require('./utils')
+var backends = require('./backends')
 
 function createContainer(emitter){
-	return function(req, res){
 
+	return function(req, res){
 		var parsedURL = url.parse(req.url, true)
 		var name = parsedURL.query.name
 		
@@ -53,6 +54,7 @@ function createImage(emitter){
 		var parsedURL = url.parse(req.url, true)
 		var image = parsedURL.query.fromImage
 
+		// TODO emit 'auth' event so PaaS can load registry logins
 		emitter.emit('route', {
 			image:image
 		}, function(err, address){
@@ -62,22 +64,6 @@ function createImage(emitter){
 				return
 			}
 			emitter.emit('proxy', req, res, address)
-
-/*
-			console.log('-------------------------------------------');
-			console.log('-------------------------------------------');
-			console.dir('http://' + address + req.url)
-			var back = hyperquest('http://' + address + req.url, {
-				method:req.method,
-				headers:req.headers
-			})
-
-			req.pipe(back).pipe(through(function(chunk,enc,next){
-				console.log(chunk.toString())
-				this.push(chunk)
-				next()
-			})).pipe(res)*/
-
 		})
 
 	}
@@ -95,9 +81,24 @@ function ping(emitter){
 	}
 }
 
-function ps(emitter){
+function listContainers(emitter){
 	return function(req, res){
-		
+		emitter.emit('list', function(err, servers){
+			if(err){
+				res.statusCode = 500
+				res.end(err)
+				return
+			}
+			backends.ps(servers, req.url, function(err, result){
+				if(err){
+					res.statusCode = 500
+					res.end(err)
+					return
+				}
+				res.setHeader('content-type', 'application/json')
+				res.end(JSON.stringify(result))
+			})
+		})
 	}
 }
 
@@ -119,8 +120,8 @@ module.exports = function(){
 
 	emitter.createContainer = createContainer(emitter)
 	emitter.createImage = createImage(emitter)
+	emitter.listContainers = listContainers(emitter)
 	emitter.ping = ping(emitter)
-	emitter.ps = ps(emitter)
 	emitter.targeted = targeted(emitter)
 
 	return emitter

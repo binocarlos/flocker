@@ -22,6 +22,12 @@ module.exports = function(){
 	  }
 	})
 
+	router.addRoute('/images/create', {
+		POST:function(req, res, opts){
+			emitter.emit('images:create', req, res)
+		}
+	})
+
 	router.addRoute('/:version/containers/create', {
 		POST:function(req, res, opts){
 			setVersionHeader(req, opts.params.version)
@@ -29,17 +35,16 @@ module.exports = function(){
 		}
 	})
 
-	router.addRoute('/images/create', {
+	router.addRoute('/:version/containers/:id/start', {
 		POST:function(req, res, opts){
-			emitter.emit('images:create', req, res)
+			emitter.emit('containers:start', req, res)
 		}
 	})
 
-	router.addRoute('/:version/containers/:id/json', {
+	router.addRoute('/:version/containers/json', {
 		GET:function(req, res, opts){
 			setVersionHeader(req, opts.params.version)
-			setContainerHeader(req, opts.params.id)
-			emitter.emit('ps', req, res)
+			emitter.emit('containers:json', req, res)
 		}
 	})
 
