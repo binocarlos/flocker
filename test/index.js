@@ -80,6 +80,13 @@ function runDocker(args, done){
   })
 }
 
+function runTargetedDocker(address, args, done){
+  runDocker([
+    '-H',
+    'tcp://' + address
+  ].concat(args), done)
+}
+
 function runProxyDocker(args, done){
   runDocker([
     '-H',
@@ -87,13 +94,31 @@ function runProxyDocker(args, done){
   ].concat(args), done)
 }
 
-function createStubImage(name, done){
-  cp.exec('docker build -t flocker/' + name + ' ' + __dirname, done)
+function removeStubImage(address, done){
+  runTargetedDocker(address, [
+    'rmi',
+    '--no-prune',
+    'binocarlos/bring-a-ping'
+  ], function(err, result){
+    console.log(result)
+    done()
+  })
 }
 
-function removeStubImage(name, done){
-  cp.exec('docker rmi flocker/' + name, done)
+function removeStubImages(done){
+  async.series([
+    function(next){
+      removeStubImage('192.168.8.120:2375', next)
+    },
+    function(next){
+      removeStubImage('192.168.8.121:2375', next)
+    },
+    function(next){
+      removeStubImage('192.168.8.122:2375', next)
+    },
+  ], done)
 }
+
 
 function createStub(name, done){
   runProxyDocker([
@@ -105,69 +130,23 @@ function createStub(name, done){
     'APPLES=10',
     '--name',
     name,
-    'flocker/' + name,
+    'binocarlos/bring-a-ping:apples',
     '/app/test/stub.js'
   ], done)
   
 }
 
-
-function createStubImages(done){
-  async.series([
-    function(next){
-      createStubImage('stub1', function(err, result){
-        console.log(result)
-        next()
-      })
-    },
-    function(next){
-      createStubImage('stub2', function(err, result){
-        console.log(result)
-        next()
-      })
-    },
-    function(next){
-      createStubImage('stub3', function(err, result){
-        console.log(result)
-        next()
-      })
-    }
-  ], done)
-}
-
-
-function removeStubImages(done){
-  async.series([
-    function(next){
-      removeStubImage('stub1', function(err, result){
-        console.log(result)
-        next()
-      })
-    },
-    function(next){
-      removeStubImage('stub2', function(err, result){
-        console.log(result)
-        next()
-      })
-    },
-    function(next){
-      removeStubImage('stub3', function(err, result){
-        console.log(result)
-        next()
-      })
-    }
-  ], done)
-}
-
-
 function createStubs(done){
   async.series([
     function(next){
       createStub('stub1', function(err, result){
+        console.log('-------------------------------------------');
+        console.log('-------------------------------------------');
+        console.log('after')
         console.log(result)
         next()
       })
-    },
+    }/*,
     function(next){
       createStub('stub2', function(err, result){
         console.log(result)
@@ -179,13 +158,27 @@ function createStubs(done){
         console.log(result)
         next()
       })
-    }
+    }*/
   ], done)
 }
 
 function destroyStubs(done){
-  cp.exec('docker stop stub1 stub2 stub3 && docker rm stub1 stub2 stub3', done)
+  cp.exec("docker stop stub1 stub2 stub3 && docker rm stub1 stub2 stub3", done)
 }
+
+function removeImage(done){
+  cp.exec("docker rmi --no-prune binocarlos/bring-a-ping", done)
+}
+
+
+tape('destroy stubs', function(t){
+  destroyStubs(function(){
+    removeImage(function(){
+      t.end()  
+    })
+    
+  })
+})
 
 startServer()
 
@@ -197,14 +190,6 @@ tape('start server', function(t){
 })
 
 
-tape('create stub images', function(t){
-  createStubImages(function(){
-    setTimeout(function(){
-      t.end()
-    }, 1000)
-  })
-})
-
 tape('create stubs', function(t){
   createStubs(function(){
     setTimeout(function(){
@@ -212,6 +197,8 @@ tape('create stubs', function(t){
     }, 1000)
   })
 })
+
+/*
 
 tape('docker ps', function(t){
 
@@ -229,6 +216,7 @@ tape('docker ps', function(t){
     t.end()
   })
 })
+*/
 
 tape('destroy stubs', function(t){
   destroyStubs(function(){

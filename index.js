@@ -4,6 +4,7 @@ var util = require('util')
 var Router = require('./router')
 var Handlers = require('./handlers')
 var Cluster = require('./cluster')
+var through = require('through2')
 
 function Flocker(){
 	EventEmitter.call(this)
@@ -14,7 +15,7 @@ function Flocker(){
 
 	// the api handlers that target a specific server
 	// will set the X-FLOCKER-HOST header to do the routing
-	this.proxy = hyperprox(function(req, next){
+	this.backends = hyperprox(function(req, next){
 		if(!req.headers['X-FLOCKER-HOST']){
 			return next('no viking docker host found')
 		}
@@ -22,7 +23,6 @@ function Flocker(){
 		address = address.indexOf('http')==0 ? address : 'http://' + address
 		next(null, req.headers['X-FLOCKER-HOST'])
 	})
-	this.proxyhandler = this.proxy.handler()
 	this.handlers.on('allocate', function(name, container, next){
 		self.emit('allocate', name, container, next)
 	})
@@ -33,7 +33,20 @@ function Flocker(){
 		self.emit('list', next)
 	})
 	this.handlers.on('proxy', function(req, res){
-		self.proxyhandler(req, res)
+		var duplex = self.backends.duplex(req, res)
+		var inputFilter = through(function(chunk, enc, next){
+			console.log('INPUT: ' + chunk.toString())
+			this.push(chunk)
+			next()
+		})
+		var outputFilter = through(function(chunk, enc, next){
+			chunk = chunk.toString().replace(/\(tag: \w+\)/, '(tag: pears)')
+			console.log('OUTPUT: ' + chunk.toString())
+			
+			this.push('HELLO')
+			next()
+		})
+		req.pipe(inputFilter).pipe(duplex).pipe(outputFilter).pipe(res)
 	})
 	this.handlers.on('find', function(container, done){
 		self.cluster.find(container, done)

@@ -1,30 +1,29 @@
 var http = require('http')
 var flocker = require('./')
 
-var server = null
-var dockers = null
 
-function startServer(){
-  dockers = flocker()
+var allServers = [
+  '192.168.8.120:2375',
+  '192.168.8.121:2375',
+  '192.168.8.122:2375'
+]
 
-  dockers.on('request', function(req, res){
-    console.log(req.url)
-  })
+var dockers = flocker()
 
-  dockers.on('route', function(info, next){
-    next(null, allServers[0])
-  })
+dockers.on('request', function(req, res){
+  console.log(req.url)
+})
 
-  dockers.on('list', function(next){
-    next(null, allServers)
-  })
+dockers.on('allocate', function(name, container, next){
+  next(null, allServers[0])
+})
 
-  server = http.createServer(function(req, res){
-    //dockers.handle(req, res)
-    res.end('ok')
-  })
+dockers.on('list', function(next){
+  next(null, allServers.splice(1))
+})
 
-  server.listen(8080)
-}
+var server = http.createServer(function(req, res){
+  dockers.handle(req, res)
+})
 
-startServer()
+server.listen(8080)
