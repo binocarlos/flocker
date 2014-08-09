@@ -41,8 +41,13 @@ There is one problem that arises with this when the user does a docker run:
  * /containers/create?name=stub1
  * routing applied (serverC)
 
-You can see the problem is that the docker client is stateless and yet docker run requires multiple steps
+## SOLUTION!
 
-We shall log requests to /containers/create - if 404 then save the allocation temporarily
+block whilst the image is downloading
 
-Then - the next /images/create + /containers/create get sent to that location
+this enables --rm -ti mode to work also
+
+## links
+
+http://blog.jameskyle.org/2014/04/coreos-docker-remote-api-tls/
+http://blog.james-carr.org/2013/10/30/securing-dockers-remote-api/

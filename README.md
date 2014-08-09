@@ -43,6 +43,25 @@ dockers.on('list', function(next){
 	listServers(next)
 })
 
+
+// a basic data store you can implement how you want
+// flocker uses the data store to implement auto image pulls
+var memoryStore = {}
+dockers.on('set', function(key, value, done){
+	memoryStore[key] = value
+	done()
+})
+
+dockers.on('get', function(key, done){
+	done(null, memoryStore[key])
+})
+
+dockers.on('delete', function(key, done){
+	delete memoryStore[key]
+	done(null)
+})
+
+
 var server = http.createServer(function(req, res){
 
 	// we can do custom auth/routing logic here
@@ -98,6 +117,20 @@ dockers.on('list', function(next){
 	next(null, dockerServers.join(','))
 })
 ```
+
+#### `dockers.on('set', function(key, value, next){})`
+
+Called when the cluster needs to save some state to a key/value store that you have implemented
+
+This is async so you can use external databases and such things
+
+#### `dockers.on('get', function(key, next){})`
+
+Fetch a value from the key/value store you have implemented
+
+#### `dockers.on('delete', function(key, value, next){})`
+
+Remove a value from the key/value store
 
 ## license
 
