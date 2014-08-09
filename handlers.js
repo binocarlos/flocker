@@ -1,14 +1,47 @@
 var url = require('url')
 var EventEmitter = require('events').EventEmitter
 var concat = require('concat-stream')
+var async = require('async')
+var hyperquest = require('hyperquest')
 var utils = require('./utils')
 
-/*
+function saveAllocation(emitter, name, image, address, done){
 
-	create requires allocate routing
-	
-*/
-function create(emitter){
+	// run the initial /containers/create and if 404
+
+	async.parallel([
+
+		/*
+		
+			write the address to /image/<imagename> so the next /images/create?fromImage=<image>
+			will get routed to address
+			
+		*/
+		function(next){
+			emitter.emit('set', '/image/' + image, address, next)
+		},
+
+		/*
+		
+			write the address to /container/<name> so the next /containers/create?name=<name>
+			will get routed to address
+			
+		*/
+		function(next){
+			emitter.emit('set', '/container/' + name, address, next)
+		}
+	], done)
+}
+
+function loadContainerAllocation(emitter, name, done){
+	emitter.emit('get', '/container/' + name, done)
+}
+
+function loadImageAllocation(emitter, imagename, done){
+	emitter.emit('get', '/image/' + imagename, done)
+}
+
+function createContainer(emitter){
 	return function(req, res){
 
 		var parsedURL = url.parse(req.url, true)
@@ -22,15 +55,75 @@ function create(emitter){
 				res.end(err)
 				return
 			}
+			var image = container.Image
+
+			/*
+			
+				check for an existing allocation
+				
+			*/
+
 			emitter.emit('allocate', name, container, function(err, address){
-				req.headers['X-FLOCKER-HOST'] = address
+				
 				var newreq = utils.cloneReq(req, JSON.stringify(container))
-				emitter.emit('done', newreq, )
+
+				var backend = hyperquest(address + newreq.url, {
+					method:newreq.method,
+					headers:newreq.headers
+				})
+
+				backend.on('error', function(err){
+					res.statusCode = 500
+					res.end(err)
+					return
+				})
+
+				backend.on('response', function(backendres){
+
+					function pipeResponse(){
+						res.statusCode = backendres.statusCode
+						res.headers = backendres.headers
+						backendres.pipe(res)
+					}
+
+					/*
+					
+						this means the image is not on the server and we need to get ready for a client pull request arriving again shortly
+						
+					*/
+					if(backendres.statusCode==404){
+						saveAllocation(emitter, name, image, address, pipeResponse)
+					}
+					/*
+					
+						otherwise just proxy the response back to the docker client
+						
+					*/
+					else{
+						pipeResponse()
+					}
+				})
+
+				newreq.pipe(backend)
+
 			})
 			
 		}))
 	}
 }
+
+
+function createImage(emitter){
+	return function(req, res){
+
+		var parsedURL = url.parse(req.url, true)
+		var image = parsedURL.query.fromImage
+		
+		console.log('-------------------------------------------');
+		console.log(image)
+	}
+}
+
 
 /*
 
@@ -68,7 +161,8 @@ module.exports = function(){
 
 	var emitter = new EventEmitter()
 
-	emitter.create = create(emitter)
+	emitter.createContainer = createContainer(emitter)
+	emitter.createImage = createImage(emitter)
 	emitter.ping = ping(emitter)
 	emitter.ps = ps(emitter)
 	emitter.targeted = targeted(emitter)

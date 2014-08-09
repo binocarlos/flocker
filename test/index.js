@@ -36,11 +36,30 @@ dockers.on('request', function(req, res){
 })
 
 dockers.on('allocate', function(name, container, next){
+  console.log('-------------------------------------------');
+  console.log('allocate')
   next(null, allServers[0])
 })
 
 dockers.on('list', function(next){
+  console.log('-------------------------------------------');
+  console.log('list')
   next(null, allServers.splice(1))
+})
+
+var memoryStore = {}
+dockers.on('set', function(key, value, done){
+  memoryStore[key] = value
+  done()
+})
+
+dockers.on('get', function(key, done){
+  done(null, memoryStore[key])
+})
+
+dockers.on('delete', function(key, done){
+  delete memoryStore[key]
+  done(null)
 })
 
 var server = http.createServer(function(req, res){
@@ -130,7 +149,7 @@ function createStub(name, done){
     'APPLES=10',
     '--name',
     name,
-    'binocarlos/bring-a-ping:apples',
+    'binocarlos/bring-a-ping',
     '/app/test/stub.js'
   ], done)
   

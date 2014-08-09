@@ -25,7 +25,14 @@ module.exports = function(){
 	router.addRoute('/:version/containers/create', {
 		POST:function(req, res, opts){
 			setVersionHeader(req, opts.params.version)
-			emitter.emit('create', req, res)
+			emitter.emit('containers:create', req, res)
+		}
+	})
+
+	router.addRoute('/:version/images/create', {
+		POST:function(req, res, opts){
+			setVersionHeader(req, opts.params.version)
+			emitter.emit('images:create', req, res)
 		}
 	})
 

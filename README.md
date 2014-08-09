@@ -43,6 +43,11 @@ dockers.on('list', function(next){
 	listServers(next)
 })
 
+// we need some authentication credentials for named image
+dockers.on('registry-auth', function(imagename, next){
+
+})
+
 
 // a basic data store you can implement how you want
 // flocker uses the data store to implement auto image pulls
@@ -72,11 +77,62 @@ var server = http.createServer(function(req, res){
 server.listen(80)
 ```
 
+## docker run
+
+The docker run command is a few steps:
+
+ * POST /containers/create
+ * if 404 then POST /images/create
+ * and POST /containers/create
+ * using containerid POST /container/<id>/start
+ * checking options POST /container/<id>/attach
+
+Every step is one of 3 modes:
+
+ * allocate a server for a new container (/containers/create)
+ * download the image for the container if its not on the server
+ * target a container with an id
+
+Step 1 is the point of this module - event handler for that
+
+Step 3 is easy because the request arrives with the container id/name so we can route
+
+Step 2 is the problem
+
+For the /images/create step - all we get from the docker client is the image name and no information about the container
+
+It's reasonable to assume a request for /images/create?image=apples will arrive quickly after the /containers/create that got a 404
+
+We shall keep some state and route the /images/create to the same host the original /containers/create was routed to
+
+Although this feels very bad - it means we have still use the x-registry-auth headers sent from the command line docker and therefore there is a much wider change of things just working via the flocker proxy
+
+So - for us to have seamless behaviour with the docker client - we need:
+
+ * docker run -> POST /containers/create?name=hello
+ * extract container info -> image=binocarlos/hello
+ * allocate server = server3
+ * save name=hello&image=binocarlos/hello&server=server3&state=created to cache
+ * /containers/create forwarded to server3
+ * 404 returned to docker client
+ * docker pull -> POST /images/create?image=binocarlos/hello + x-registry-auth
+ * load image=binocarlos/hello from cache and learn that server=server3 and check that state=created
+ * forward docker pull (x-registry-auth intact) to server3
+ * stream download progress back to original client
+ * tag cache with image=binocarlos/hello&state=ready
+ * client re-issues /containers/create?name=hello
+ * load image=binocarlos/hello&name=hello from cache and learn that server=server3 and check that state=ready
+ * forward create request and let
+
+There will also be a mode to turn this off and directly download the image in the original /containers/create request.
+
+This means there is no access to the x-registry-auth information from the docker client but the `registry-auth` event is fired
+
 ## api
 
 #### `var dockers = flocker()`
 
-Create a new docker proxy
+Create a new flocker proxy
 
 ## events
 
@@ -131,6 +187,10 @@ Fetch a value from the key/value store you have implemented
 #### `dockers.on('delete', function(key, value, next){})`
 
 Remove a value from the key/value store
+
+#### `dockers.on('registry-auth', function(registry, next){})`
+
+Load the authentication for a registry - TBC
 
 ## license
 
