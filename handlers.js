@@ -89,13 +89,18 @@ function listContainers(emitter){
 				res.end(err)
 				return
 			}
-			backends.ps(servers, req.url, function(err, result){
+			backends.ps(servers, req.url, function(err, result, collection){
 				if(err){
 					res.statusCode = 500
 					res.end(err)
 					return
 				}
 				res.setHeader('content-type', 'application/json')
+				console.log('-------------------------------------------');
+				console.log('-------------------------------------------');
+				console.log('result')
+				console.dir(result)
+				console.dir(collection)
 				res.end(JSON.stringify(result))
 			})
 		})
