@@ -1,14 +1,6 @@
 var http = require('http')
 var flocker = require('./')
 
-var auth = require('http-auth');
-var basic = auth.basic({
-        realm: "Simon Area."
-    }, function (username, password, callback) { // Custom authentication method.
-        callback(username === "Tina" && password === "Bullock");
-    }
-);
-
 var allServers = [
   '192.168.8.120:2375',
   '192.168.8.121:2375',
@@ -18,10 +10,12 @@ var allServers = [
 var dockers = flocker()
 
 dockers.on('request', function(req, res){
-  console.log(req.url)
+  console.log(req.method)
+  console.dir(req.url)
+  console.dir(req.headers)
 })
 
-dockers.on('allocate', function(name, container, next){
+dockers.on('route', function(info, next){
   next(null, allServers[0])
 })
 
@@ -29,15 +23,8 @@ dockers.on('list', function(next){
   next(null, allServers.splice(1))
 })
 
-var server = http.createServer(basic, function(req, res){
-  console.log('-------------------------------------------');
-  console.log('-------------------------------------------');
-  console.dir(req.method)
-  console.dir(req.url)
-  console.dir(req.headers)
-  var auth = new Buffer(req.headers['x-registry-auth'], 'base64').toString()
-  console.log(auth)
-  res.end('ok')
+var server = http.createServer(function(req, res){
+  dockers.handle(req, res)
 })
 
 server.listen(8080)

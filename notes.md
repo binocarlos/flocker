@@ -41,11 +41,11 @@ There is one problem that arises with this when the user does a docker run:
  * /containers/create?name=stub1
  * routing applied (serverC)
 
+We dont have a relationship between the container name and the image name and so cannot route the same way
+
 ## SOLUTION!
 
-block whilst the image is downloading
-
-this enables --rm -ti mode to work also
+allow the routing to be done externally to allow various ways of handling the problem
 
 ## links
 

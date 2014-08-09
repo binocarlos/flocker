@@ -29,9 +29,8 @@ module.exports = function(){
 		}
 	})
 
-	router.addRoute('/:version/images/create', {
+	router.addRoute('/images/create', {
 		POST:function(req, res, opts){
-			setVersionHeader(req, opts.params.version)
 			emitter.emit('images:create', req, res)
 		}
 	})

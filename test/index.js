@@ -19,6 +19,7 @@ var tape     = require('tape')
 var http = require('http')
 var url = require('url')
 var async = require('async')
+var through = require('through2')
 var concat = require('concat-stream')
 
 var allServers = [
@@ -35,9 +36,10 @@ dockers.on('request', function(req, res){
   console.dir(req.url)
 })
 
-dockers.on('allocate', function(name, container, next){
+dockers.on('route', function(info, next){
   console.log('-------------------------------------------');
   console.log('allocate')
+  console.dir(info)
   next(null, allServers[0])
 })
 
@@ -45,21 +47,6 @@ dockers.on('list', function(next){
   console.log('-------------------------------------------');
   console.log('list')
   next(null, allServers.splice(1))
-})
-
-var memoryStore = {}
-dockers.on('set', function(key, value, done){
-  memoryStore[key] = value
-  done()
-})
-
-dockers.on('get', function(key, done){
-  done(null, memoryStore[key])
-})
-
-dockers.on('delete', function(key, done){
-  delete memoryStore[key]
-  done(null)
 })
 
 var server = http.createServer(function(req, res){
@@ -74,28 +61,24 @@ function stopServer(){
   server.close()
 }
 
-function runDocker(args, done){
+function runDockerStream(args, done){
   args = args || []
 
   var ps = cp.spawn('docker', args, {
-    stdio:'pipe'
+    stdio:'inherit'
   })
 
-  ps.stdout.pipe(concat(function(result){
-    done(null, result.toString())
-  }))
+  ps.on('error', done)
+  ps.on('close', done)
+}
 
-  ps.stderr.pipe(concat(function(result){
-    var err = result.toString()
-    if(err && err.length>0){
-      console.log('-------------------------------------------');
-      console.log('error')
-      console.log(err)
+function runDocker(args, done){
+  var cmd = 'docker ' + (args || []).join(' ')
+  cp.exec(cmd, function(err, stdout, stderr){
+    if(err || stderr){
+      return done(err || stderr.toString())
     }
-  }))
-
-  ps.on('error', function(error){
-    done(error)
+    done(null, stdout.toString())
   })
 }
 
@@ -111,6 +94,13 @@ function runProxyDocker(args, done){
     '-H',
     'tcp://192.168.8.120:8080'
   ].concat(args), done)
+}
+
+function runProxyDockerStream(args, done){
+  runDockerStream([
+    '-H',
+    'tcp://192.168.8.120:8080'
+  ].concat(args), done) 
 }
 
 function removeStubImage(address, done){
@@ -140,17 +130,12 @@ function removeStubImages(done){
 
 
 function createStub(name, done){
-  runProxyDocker([
+  runProxyDockerStream([
     'run',
     '-d',
-    '-v',
-    __dirname + ':/app',
-    '-e',
-    'APPLES=10',
     '--name',
     name,
-    'binocarlos/bring-a-ping',
-    '/app/test/stub.js'
+    'binocarlos/bring-a-ping'
   ], done)
   
 }

@@ -50,7 +50,7 @@ function Flocker(){
 		self.cluster.find(container, done)
 	})
 	this.router.on('containers:create', this.handlers.createContainer)
-	this.router.on('images:create', this.handlers.createimage)
+	this.router.on('images:create', this.handlers.createImage)
 	this.router.on('ping', this.handlers.ping)
 	this.router.on('ps', this.handlers.ps)
 	this.router.on('targeted', this.handlers.targeted)

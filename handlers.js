@@ -2,6 +2,7 @@ var url = require('url')
 var EventEmitter = require('events').EventEmitter
 var concat = require('concat-stream')
 var async = require('async')
+var through = require('through2')
 var hyperquest = require('hyperquest')
 var utils = require('./utils')
 
@@ -61,6 +62,22 @@ function createImage(emitter){
 				return
 			}
 			emitter.emit('proxy', req, res, address)
+
+/*
+			console.log('-------------------------------------------');
+			console.log('-------------------------------------------');
+			console.dir('http://' + address + req.url)
+			var back = hyperquest('http://' + address + req.url, {
+				method:req.method,
+				headers:req.headers
+			})
+
+			req.pipe(back).pipe(through(function(chunk,enc,next){
+				console.log(chunk.toString())
+				this.push(chunk)
+				next()
+			})).pipe(res)*/
+
 		})
 
 	}
