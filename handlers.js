@@ -1,11 +1,7 @@
 var url = require('url')
 var EventEmitter = require('events').EventEmitter
 var concat = require('concat-stream')
-var async = require('async')
-var through = require('through2')
 var net = require('net')
-var hyperquest = require('hyperquest')
-var from = require('from2')
 var utils = require('./utils')
 var backends = require('./backends')
 

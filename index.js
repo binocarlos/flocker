@@ -3,7 +3,6 @@ var EventEmitter = require('events').EventEmitter
 var util = require('util')
 var Router = require('./router')
 var Handlers = require('./handlers')
-var through = require('through2')
 
 function Flocker(){
 	EventEmitter.call(this)

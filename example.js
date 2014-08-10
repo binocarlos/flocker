@@ -1,6 +1,5 @@
 var http = require('http')
 var flocker = require('./')
-var through = require('through2')
 var hyperprox = require('hyperprox')
 
 var allServers = [{

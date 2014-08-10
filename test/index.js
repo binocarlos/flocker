@@ -19,7 +19,6 @@ var tape     = require('tape')
 var http = require('http')
 var url = require('url')
 var async = require('async')
-var through = require('through2')
 var concat = require('concat-stream')
 
 var allServers = [{

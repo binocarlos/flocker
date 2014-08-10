@@ -23,18 +23,14 @@
   "homepage": "https://github.com/binocarlos/flocker",
   "devDependencies": {
     "async": "^0.9.0",
-    "concat-stream": "^1.4.6",
-    "log-socket": "^0.1.0",
     "tape": "^2.14.0"
   },
   "dependencies": {
-    "async": "^0.9.0",
-    "debug": "^1.0.4",
+    "concat-stream": "^1.4.6",
     "from2": "^1.2.0",
     "hyperprox": "^2.0.0",
     "hyperquest": "^0.3.0",
     "minimist": "^0.2.0",
-    "routes-router": "^4.1.0",
-    "through2": "^0.6.0"
+    "routes-router": "^4.1.0"
   }
 }
