@@ -41,11 +41,11 @@ function Flocker(){
 	})
 	this.router.on('containers:json', this.handlers.listContainers)
 	this.router.on('containers:create', this.handlers.createContainer)
-	this.router.on('containers:request', this.handlers.containerRequest)
 	this.router.on('images:create', this.handlers.createImage)
-	//this.router.on('ping', this.handlers.ping)
-	//this.router.on('ps', this.handlers.ps)
-	//this.router.on('targeted', this.handlers.targeted)
+
+	// this is a generic handler for any request targeted at a specific container name
+	// it expects req.headers['X-FLOCKER-CONTAINER'] to be set
+	this.router.on('containers:targetid', this.handlers.containerRequest)
 }
 
 util.inherits(Flocker, EventEmitter)

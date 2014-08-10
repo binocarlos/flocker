@@ -102,8 +102,10 @@ function containerRequest(emitter){
 		}
 
 		var id = req.headers['X-FLOCKER-CONTAINER']
+
 		emitter.emit('list', function(err, servers){
 			backends.ps(servers, '/containers/json?all=1', function(err, result, collection){
+
 				if(err){
 					res.statusCode = 500
 					res.end(err)
@@ -122,6 +124,10 @@ function containerRequest(emitter){
 					res.end('container: ' + id + ' not found')
 					return
 				}
+				console.log('-------------------------------------------');
+				console.log('-------------------------------------------');
+				console.log('backenbd')
+				console.dir(backend)
 				emitter.emit('proxy', req, res, backend.docker)
 			})
 		})

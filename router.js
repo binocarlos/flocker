@@ -39,7 +39,7 @@ module.exports = function(){
 		POST:function(req, res, opts){
 			setVersionHeader(req, opts.params.version)
 			setContainerHeader(req, opts.params.id)
-			emitter.emit('containers:request', req, res)
+			emitter.emit('containers:targetid', req, res)
 		}
 	})
 
@@ -47,7 +47,23 @@ module.exports = function(){
 		POST:function(req, res, opts){
 			setVersionHeader(req, opts.params.version)
 			setContainerHeader(req, opts.params.id)
-			emitter.emit('containers:request', req, res)
+			emitter.emit('containers:targetid', req, res)
+		}
+	})
+
+	router.addRoute('/:version/containers/:id/json', {
+		GET:function(req, res, opts){
+			setVersionHeader(req, opts.params.version)
+			setContainerHeader(req, opts.params.id)
+			emitter.emit('containers:targetid', req, res)
+		}
+	})
+
+	router.addRoute('/:version/images/:id/json', {
+		GET:function(req, res, opts){
+			setVersionHeader(req, opts.params.version)
+			setContainerHeader(req, opts.params.id)
+			emitter.emit('containers:targetid', req, res)
 		}
 	})
 

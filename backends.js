@@ -1,6 +1,9 @@
 var concat = require('concat-stream')
 var hyperquest = require('hyperquest')
 var async = require('async')
+var utils = require('./utils')
+
+var makeKey = utils.collectionKey
 
 function blankCollection(){
 	var ret = {
@@ -25,10 +28,10 @@ function createCollection(backend, arr){
 		}
 		proc.Names = procNames
 		procNames.forEach(function(name){
-			ret.names[name] = hostname
+			ret.names[makeKey(name)] = hostname
 		})
-		ret.ids[proc.Id] = hostname
-		ret.shortids[shortId] = hostname
+		ret.ids[makeKey(proc.Id)] = hostname
+		ret.shortids[makeKey(shortId)] = hostname
 	})
 	return ret
 }
