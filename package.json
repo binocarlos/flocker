@@ -1,6 +1,6 @@
 {
   "name": "flocker",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "treat a flock of dockers as a single docker",
   "main": "index.js",
   "scripts": {
