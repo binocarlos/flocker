@@ -60,12 +60,72 @@ function attachContainer(emitter){
 		})
 
 		loadContainerServerAddress(emitter, req, res, function(err, address){
+
+			console.log('-------------------------------------------');
+			console.log('-------------------------------------------');
+			console.log('address:')
+			console.log(address)
+
+			var host = address.split(':')[0]
+			var port = address.split(':')[1]
+
+		  var client = net.connect({
+		  	host:host,
+		  	port:port,
+		  	allowHalfOpen:true
+		  })
+
+		  client.on('error', function(err) {
+		    console.log('-------------------------------------------');
+		    console.log('-------------------------------------------');
+		    console.log('backend error')
+		  })
+
+		  client.on('connect', function() {
+		    client.write('POST ' + req.url + ' HTTP/1.1\r\n' +
+					'Content-Type: application/vnd.docker.raw-stream\r\n\r\n');
+
+		    client.on('data', function(data) {
+		    	console.log('-------------------------------------------');
+		    	console.log('-------------------------------------------');
+		    	console.log('data')
+		    	console.log(data)
+		    });
+
+		    client.on('finish', function() {
+		    	console.log('-------------------------------------------');
+		    	console.log('-------------------------------------------');
+		    	console.log('finish')
+		    })
+		  })
+
+			/*
 			var backend = hyperquest('http://' + address + req.url, {
 				method:'POST',
 				headers:req.headers
 			})
 
-			req.pipe(backend).pipe(res)
+			req.pipe(through(function(chunk,enc,next){
+				console.log(chunk.toString())
+				this.push(chunk)
+				next()
+			})).pipe(backend).pipe(through(function(chunk,enc,next){
+				console.log(chunk.toString())
+				this.push(chunk)
+				next()
+			})).pipe(res)
+
+			backend.on('error', function(err){
+				console.log('-------------------------------------------');
+				console.log('backend error')
+				console.log(err)
+			})
+
+			backend.on('close', function(){
+				console.log('-------------------------------------------');
+				console.log('backend close')
+			})
+			*/
 		})
 	}
 }

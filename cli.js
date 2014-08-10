@@ -7,11 +7,5 @@ var args = require('minimist')(process.argv, {
 	}
 })
 
-var commands = {
-	stub:function(){
-		require('./test/stub.js')
-	},
-	
-}
-
-var command = args._[2]
+console.log('hello here')
+process.stdin.pipe(process.stdout)

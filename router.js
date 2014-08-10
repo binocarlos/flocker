@@ -51,6 +51,14 @@ module.exports = function(){
 		}
 	})
 
+	router.addRoute('/:version/containers/:id', {
+		DELETE:function(req, res, opts){
+			setVersionHeader(req, opts.params.version)
+			setContainerHeader(req, opts.params.id)
+			emitter.emit('containers:targetid', req, res)
+		}
+	})
+
 	// these requests are for a specific container therefore server
 	// let the backend docker work out HTTP methods
 	router.addRoute('/:version/containers/:id/:method', function(req, res, opts){
