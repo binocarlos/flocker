@@ -30,7 +30,7 @@ function createContainer(emitter){
 				name:name,
 				image:image,
 				container:container
-			}, function(err, address){
+			}, function(err, backend){
 
 				if(err){
 					res.statusCode = 500
@@ -41,7 +41,7 @@ function createContainer(emitter){
 				// re-create the request for the actual backend docker
 				var newreq = utils.cloneReq(req, JSON.stringify(container))
 
-				emitter.emit('proxy', newreq, res, address)
+				emitter.emit('proxy', newreq, res, backend.docker)
 			})
 		}))
 	}
@@ -57,13 +57,13 @@ function createImage(emitter){
 		// TODO emit 'auth' event so PaaS can load registry logins
 		emitter.emit('route', {
 			image:image
-		}, function(err, address){
+		}, function(err, backend){
 			if(err){
 				res.statusCode = 500
 				res.end(err)
 				return
 			}
-			emitter.emit('proxy', req, res, address)
+			emitter.emit('proxy', req, res, backend.docker)
 		})
 
 	}
@@ -109,13 +109,20 @@ function containerRequest(emitter){
 					res.end(err)
 					return
 				}
-				var address = utils.searchCollection(collection, id)
-				if(!address){
+				var hostname = utils.searchCollection(collection, id)
+				var backend = null
+
+				servers.forEach(function(b){
+					if(b.hostname==hostname){
+						backend = b
+					}
+				})
+				if(!backend){
 					res.statusCode = 404
 					res.end('container: ' + id + ' not found')
 					return
 				}
-				emitter.emit('proxy', req, res, address)
+				emitter.emit('proxy', req, res, backend.docker)
 			})
 		})
 

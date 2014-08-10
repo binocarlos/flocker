@@ -17,7 +17,7 @@ function Flocker(){
 		if(!req.headers['X-FLOCKER-HOST']){
 			return next('no flocker host found')
 		}
-		var address = req.headers['X-FLOCKER-HOST']
+		var address = req.headers['X-FLOCKER-HOST'] || ''
 		address = address.indexOf('http')==0 ? address : 'http://' + address
 		next(null, req.headers['X-FLOCKER-HOST'])
 	})

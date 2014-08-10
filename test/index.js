@@ -22,11 +22,16 @@ var async = require('async')
 var through = require('through2')
 var concat = require('concat-stream')
 
-var allServers = [
-  '192.168.8.120:2375',
-  '192.168.8.121:2375',
-  '192.168.8.122:2375'
-]
+var allServers = [{
+  hostname:'node1',
+  docker:'192.168.8.120:2375'
+},{
+  hostname:'node2',
+  docker:'192.168.8.121:2375'
+},{
+  hostname:'node3',
+  docker:'192.168.8.122:2375'
+}]
 
 var dockers = flocker()
 
@@ -203,8 +208,11 @@ tape('docker ps', function(t){
     }
     console.log(result)
     t.ok(result.indexOf('stub1')>0, 'stub1')
-    t.ok(result.indexOf('stub2')>0, 'stub1')
-    t.ok(result.indexOf('stub3')>0, 'stub1')
+    t.ok(result.indexOf('stub1@node1')>0, 'stub1@node1')
+    t.ok(result.indexOf('stub2')>0, 'stub2')
+    t.ok(result.indexOf('stub2@node2')>0, 'stub2@node2')
+    t.ok(result.indexOf('stub3')>0, 'stub3')
+    t.ok(result.indexOf('stub3@node3')>0, 'stub3@node3')
     t.end()
   })
 })

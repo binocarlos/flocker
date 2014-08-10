@@ -25,7 +25,7 @@ var dockers = flocker()
 dockers.on('list', function(next){
 
 	// we can load the list from a database
-	// it should return a comma delimited string of addresses
+	// it should return an array of server objects
 	listServers(next)
 })
 
@@ -35,12 +35,12 @@ dockers.on('route', function(info, next){
 		// route based on the container info
 		var containerName = info.name
 		var containerInfo = info.container
-		next(null, address)
+		next(null, server)
 	}
 	else if(info.image){
 		// route based on the image name
 		var imageName = info.image
-		next(null, address)
+		next(null, server)
 	}
 	
 })
@@ -109,10 +109,19 @@ Called when the proxy needs a list of all current servers
 An array of docker endpoint strings should be returned
 
 ```js
-var dockerServers = ['192.168.8.120:2375','192.168.8.121:2375','192.168.8.122:2375']
+var dockerServers = [{
+	hostname:'node1',
+	docker:'192.168.8.120:2375'
+},{
+	hostname:'node2',
+	docker:'192.168.8.121:2375'
+},{
+	hostname:'node3',
+	docker:'192.168.8.122:2375'
+}]
 
 dockers.on('list', function(next){
-	next(null, dockerServers.join(','))
+	next(null, dockerServers)
 })
 ```
 

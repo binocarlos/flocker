@@ -50,13 +50,20 @@ function singleps(address, url, done){
 
 function ps(backends, url, done){
 	async.map(backends, function(backend, next){
-		singleps(backend, url, next)
+		singleps(backend.docker, url, next)
 	}, function(err, multiarr){
 		if(err) return done(err)
 		var ret = []
 		var collection = blankCollection()
 		multiarr.forEach(function(arr, i){
-			mergeCollection(collection, createCollection(backends[i], arr))
+			mergeCollection(collection, createCollection(backends[i].hostname, arr))
+			var backend = backends[i]
+			arr = arr.map(function(container){
+				var names = container.Names || []
+				names.push(names[0] + '@' + backend.hostname)
+				container.Names = names
+				return container
+			})
 			ret = ret.concat(arr)
 		})
 		done(null, ret, collection)
