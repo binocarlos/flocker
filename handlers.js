@@ -43,32 +43,11 @@ function createContainer(emitter){
 				// re-create the request for the actual backend docker
 				var newreq = utils.cloneReq(req, JSON.stringify(container))
 
-				var backendreq = hyperquest('http://' + backend.docker + newreq.url, {
-					method:newreq.method,
-					headers:newreq.headers
-				})
-
-				backendreq.on('response', function(r){
-					if(r.statusCode==404){
-						res.statusCode = r.statusCode
-						res.headers = r.headers
-						r.pipe(res)
-					}
-					else{
-						backends.imageinfo(backend.docker, req.headers['X-DOCKER-API-VERSION'], image, function(err, imageinfo){
-							console.log('-------------------------------------------');
-							console.dir(imageinfo)
-							process.exit()
-						})
-					}
-				})
-
-				newreq.pipe(backendreq)
+				emitter.emit('proxy', newreq, res, backend.docker)
 			})
 		}))
 	}
 }
-
 
 function attachContainer(emitter){
 
