@@ -59,6 +59,9 @@ var server = http.createServer(function(req, res){
 	dockers.handle(req, res)	
 })
 
+// this is important if we want docker attach to work
+server.httpAllowHalfOpen = true
+
 // we now have a multi-docker server compatable with the standard docker client
 server.listen(80)
 ```
@@ -128,6 +131,10 @@ dockers.on('list', function(next){
 #### `dockers.on('registry-auth', function(registry, next){})`
 
 Load the authentication for a registry - TBC
+
+#### `httpAllowHalfOpen`
+
+Because of the way docker attach works - you must set this property to true on the http server to allow attach traffic to travel via the proxy
 
 ## license
 

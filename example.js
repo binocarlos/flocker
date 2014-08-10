@@ -1,5 +1,6 @@
 var http = require('http')
 var flocker = require('./')
+var through = require('through2')
 var hyperprox = require('hyperprox')
 
 var allServers = [{
@@ -12,12 +13,6 @@ var allServers = [{
   hostname:'node3',
   docker:'192.168.8.122:2375'
 }]
-
-var proxy = hyperprox(function(req, next){
-  next(null, '192.168.8.121:2375')
-})
-
-var backendsproxy = proxy.handler()
 
 var dockers = flocker()
 
@@ -57,8 +52,13 @@ var server = http.createServer(function(req, res){
     console.dir(res._headers)
   })
 
-  //backendsproxy(req, res)
   dockers.handle(req, res)
 })
 
+/*
+
+  this is important if we want docker attach to work
+  
+*/
+server.httpAllowHalfOpen = true
 server.listen(8080)

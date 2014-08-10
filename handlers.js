@@ -3,7 +3,9 @@ var EventEmitter = require('events').EventEmitter
 var concat = require('concat-stream')
 var async = require('async')
 var through = require('through2')
+var net = require('net')
 var hyperquest = require('hyperquest')
+var from = require('from2')
 var utils = require('./utils')
 var backends = require('./backends')
 
@@ -51,24 +53,19 @@ function attachContainer(emitter){
 
 	return function(req, res){
 
-		loadContainerServerAddress(emitter, req, res, function(err, address){
+		res.writeHead(200, {
+			'Transfer-Encoding':'',
+			'Connection':'',
+		  'Content-Type': 'application/vnd.docker.raw-stream'
+		})
 
+		loadContainerServerAddress(emitter, req, res, function(err, address){
 			var backend = hyperquest('http://' + address + req.url, {
 				method:'POST',
 				headers:req.headers
 			})
 
-			res.setHeader('transfer-encoding', '')
-			res.setHeader('connection', '')
-
-			backend.on('response', function(r){
-
-				res.setHeader('content-type', r.headers['content-type'])
-				res.statusCode = r.statusCode
-			})
-
 			req.pipe(backend).pipe(res)
-			
 		})
 	}
 }
