@@ -46,7 +46,7 @@ function Flocker(){
 
 	// this is a generic handler for any request targeted at a specific container name
 	// it expects req.headers['X-FLOCKER-CONTAINER'] to be set
-	this.router.on('containers:targetid', this.handlers.containerRequest)
+	this.router.on('containers:targetid', this.handlers.targetid)
 }
 
 util.inherits(Flocker, EventEmitter)

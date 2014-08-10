@@ -43,11 +43,32 @@ function createContainer(emitter){
 				// re-create the request for the actual backend docker
 				var newreq = utils.cloneReq(req, JSON.stringify(container))
 
-				emitter.emit('proxy', newreq, res, backend.docker)
+				var backendreq = hyperquest('http://' + backend.docker + newreq.url, {
+					method:newreq.method,
+					headers:newreq.headers
+				})
+
+				backendreq.on('response', function(r){
+					if(r.statusCode==404){
+						res.statusCode = r.statusCode
+						res.headers = r.headers
+						r.pipe(res)
+					}
+					else{
+						backends.imageinfo(backend.docker, req.headers['X-DOCKER-API-VERSION'], image, function(err, imageinfo){
+							console.log('-------------------------------------------');
+							console.dir(imageinfo)
+							process.exit()
+						})
+					}
+				})
+
+				newreq.pipe(backendreq)
 			})
 		}))
 	}
 }
+
 
 function attachContainer(emitter){
 
@@ -185,37 +206,12 @@ function loadContainerServerAddress(emitter, req, res, done){
 
 
 
-function containerRequest(emitter){
+function targetid(emitter){
 	return function(req, res){
 
 		loadContainerServerAddress(emitter, req, res, function(err, address){
 			emitter.emit('proxy', req, res, address)
 		})
-
-	}
-}
-
-
-/*
-
-	these are parallel and hit all dockers
-	
-*/
-function ping(emitter){
-	return function(req, res){
-		
-	}
-}
-
-
-/*
-
-	directed towards a specific container
-	we need to find the container first
-	
-*/
-function targeted(emitter){
-	return function(req, res){
 
 	}
 }
@@ -227,10 +223,8 @@ module.exports = function(){
 	emitter.createContainer = createContainer(emitter)
 	emitter.attachContainer = attachContainer(emitter)
 	emitter.createImage = createImage(emitter)
-	emitter.containerRequest = containerRequest(emitter)
+	emitter.targetid = targetid(emitter)
 	emitter.listContainers = listContainers(emitter)
-	emitter.ping = ping(emitter)
-	emitter.targeted = targeted(emitter)
 
 	return emitter
 
