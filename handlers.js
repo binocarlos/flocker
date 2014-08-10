@@ -76,27 +76,25 @@ function attachContainer(emitter){
 		  })
 
 		  client.on('error', function(err) {
-		    console.log('-------------------------------------------');
-		    console.log('-------------------------------------------');
-		    console.log('backend error')
+		  	res.statusCode = 500
+		  	res.end(err)
 		  })
 
 		  client.on('connect', function() {
 		    client.write('POST ' + req.url + ' HTTP/1.1\r\n' +
 					'Content-Type: application/vnd.docker.raw-stream\r\n\r\n');
 
-		    client.on('data', function(data) {
-		    	console.log('-------------------------------------------');
-		    	console.log('-------------------------------------------');
-		    	console.log('data')
-		    	console.log(data)
-		    });
+		    var hitHeaders = false
 
-		    client.on('finish', function() {
-		    	console.log('-------------------------------------------');
-		    	console.log('-------------------------------------------');
-		    	console.log('finish')
-		    })
+		    client.pipe(through(function(chunk,enc,next){
+		    	if(hitHeaders){
+		    		this.push(chunk)
+		    	}
+		    	else{
+		    		hitHeaders = true
+		    	}
+		    	next()
+		    })).pipe(res)
 		  })
 
 			/*
