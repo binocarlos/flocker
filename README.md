@@ -1,7 +1,9 @@
 flocker
 -------
 
-treat a flock of dockers as a single docker similar to the [libswarm](https://github.com/docker/libswarm) aggregate backend
+treat a flock of dockers as a single docker server
+
+similar to the [libswarm](https://github.com/docker/libswarm) aggregate backend
 
 ## install
 
@@ -35,6 +37,8 @@ dockers.on('route', function(info, next){
 		// route based on the container info
 		var containerName = info.name
 		var containerInfo = info.container
+
+		// you can remap properties of the container before it reaches the docker server
 		next(null, server)
 	}
 	else if(info.image){
@@ -42,15 +46,6 @@ dockers.on('route', function(info, next){
 		var imageName = info.image
 		next(null, server)
 	}
-	
-})
-
-// remap a container based on its info and its image
-dockers.on('container', function(container, image, done){
-
-	// you can change properties of the container
-	// image is read-only
-	// call done when ready	
 })
 
 var server = http.createServer(function(req, res){
@@ -128,13 +123,15 @@ dockers.on('list', function(next){
 })
 ```
 
-#### `dockers.on('registry-auth', function(registry, next){})`
-
-Load the authentication for a registry - TBC
-
 #### `httpAllowHalfOpen`
 
 Because of the way docker attach works - you must set this property to true on the http server to allow attach traffic to travel via the proxy
+
+```js
+// this is important if we want docker attach to work
+server.httpAllowHalfOpen = true
+server.listen(80)
+```
 
 ## license
 
