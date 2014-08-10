@@ -201,8 +201,6 @@ tape('docker ps', function(t){
       t.end()
       return
     }
-    console.log('-------------------------------------------');
-    console.log('-------------------------------------------');
     console.log(result)
     t.ok(result.indexOf('stub1')>0, 'stub1')
     t.ok(result.indexOf('stub2')>0, 'stub1')
