@@ -111,23 +111,19 @@ function containerRequest(emitter){
 					res.end(err)
 					return
 				}
-				var hostname = utils.searchCollection(collection, id)
-				var backend = null
 
-				servers.forEach(function(b){
-					if(b.hostname==hostname){
-						backend = b
-					}
-				})
+				// this is the name used when we get back to the real docker server
+				var actualname = id.split('@')[0]
+				req.url = req.url.replace(id, actualname)
+
+				var hostname = utils.searchCollection(collection, id)
+				var backend = utils.getServerByHostname(servers, hostname)
 				if(!backend){
 					res.statusCode = 404
 					res.end('container: ' + id + ' not found')
 					return
 				}
-				console.log('-------------------------------------------');
-				console.log('-------------------------------------------');
-				console.log('backenbd')
-				console.dir(backend)
+
 				emitter.emit('proxy', req, res, backend.docker)
 			})
 		})

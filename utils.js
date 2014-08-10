@@ -27,9 +27,20 @@ function collectionKey(st, isName){
 	return 'container:' + (isName ? '/' : '') + st
 }
 
+function getServerByHostname(servers, hostname){
+	var backend = null
+	servers.forEach(function(b){
+		if(b.hostname==hostname){
+			backend = b
+		}
+	})
+	return backend
+}
+
 module.exports = {
 	cloneReq:cloneReq,
 	fromString:fromString,
 	searchCollection:searchCollection,
-	collectionKey:collectionKey
+	collectionKey:collectionKey,
+	getServerByHostname:getServerByHostname
 }

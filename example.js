@@ -54,7 +54,7 @@ var server = http.createServer(function(req, res){
 
   res.on('finish', function(){
     console.log('RES: ' + res.statusCode)
-    console.dir(res.headers)
+    console.dir(res._headers)
   })
 
 //  backendsproxy(req, res)
