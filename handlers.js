@@ -53,26 +53,33 @@ function attachContainer(emitter){
 
 	return function(req, res){
 
-		res.writeHead(200, {
-			'Transfer-Encoding':'',
-			'Connection':'',
-		  'Content-Type': 'application/vnd.docker.raw-stream'
-		})
+		/*
+		
+			this needs some work to allow for data to be piped into containers
+
+			as soon as the response headers are written - the docker client starts streaming
+			input assuming the attach is setup and buffering
+
+			however - getting to that stream once the response headers have been sent seems hard in node
+
+			the solution could be to have 2 sockets listening with some basic HTTP parsing
+			to check if its an attach method and if not then tcp proxy to the HTTP server
+
+			seems complicated though - so gonna leave it for now
+
+			the main idea is to boot servers anyway but piping data into containers dynamically
+			allocated is cool
+			
+		*/
 
 		loadContainerServerAddress(emitter, req, res, function(err, address){
-
-			console.log('-------------------------------------------');
-			console.log('-------------------------------------------');
-			console.log('address:')
-			console.log(address)
 
 			var host = address.split(':')[0]
 			var port = address.split(':')[1]
 
 		  var client = net.connect({
 		  	host:host,
-		  	port:port,
-		  	allowHalfOpen:true
+		  	port:port
 		  })
 
 		  client.on('error', function(err) {
@@ -84,46 +91,16 @@ function attachContainer(emitter){
 		    client.write('POST ' + req.url + ' HTTP/1.1\r\n' +
 					'Content-Type: application/vnd.docker.raw-stream\r\n\r\n');
 
-		    var hitHeaders = false
-
-		    client.pipe(through(function(chunk,enc,next){
-		    	if(hitHeaders){
-		    		this.push(chunk)
-		    	}
-		    	else{
-		    		hitHeaders = true
-		    	}
-		    	next()
-		    })).pipe(res)
+		    // this looks after the response HTTP headers
+		    client.pipe(res.connection)
+		    res.on('error', function(){
+		    	client.destroy()
+		    })
+		    res.on('close', function(){
+		    	client.destroy()
+		    })
 		  })
 
-			/*
-			var backend = hyperquest('http://' + address + req.url, {
-				method:'POST',
-				headers:req.headers
-			})
-
-			req.pipe(through(function(chunk,enc,next){
-				console.log(chunk.toString())
-				this.push(chunk)
-				next()
-			})).pipe(backend).pipe(through(function(chunk,enc,next){
-				console.log(chunk.toString())
-				this.push(chunk)
-				next()
-			})).pipe(res)
-
-			backend.on('error', function(err){
-				console.log('-------------------------------------------');
-				console.log('backend error')
-				console.log(err)
-			})
-
-			backend.on('close', function(){
-				console.log('-------------------------------------------');
-				console.log('backend close')
-			})
-			*/
 		})
 	}
 }
