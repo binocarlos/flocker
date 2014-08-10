@@ -19,7 +19,12 @@ function cloneReq(req, newContent){
 	return newReq
 }
 
+function searchCollection(collection, name){
+	return collection.ids[name] || collection.shortids[name] || collection.names[name]
+}
+
 module.exports = {
 	cloneReq:cloneReq,
-	fromString:fromString
+	fromString:fromString,
+	searchCollection:searchCollection
 }

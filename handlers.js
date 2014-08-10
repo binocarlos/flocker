@@ -69,18 +69,6 @@ function createImage(emitter){
 	}
 }
 
-
-/*
-
-	these are parallel and hit all dockers
-	
-*/
-function ping(emitter){
-	return function(req, res){
-		
-	}
-}
-
 function listContainers(emitter){
 	return function(req, res){
 		emitter.emit('list', function(err, servers){
@@ -96,16 +84,56 @@ function listContainers(emitter){
 					return
 				}
 				res.setHeader('content-type', 'application/json')
-				console.log('-------------------------------------------');
-				console.log('-------------------------------------------');
-				console.log('result')
-				console.dir(result)
-				console.dir(collection)
 				res.end(JSON.stringify(result))
 			})
 		})
 	}
 }
+
+
+
+function containerRequest(emitter){
+	return function(req, res){
+
+		if(!req.headers['X-FLOCKER-CONTAINER']){
+			res.statusCode = 500
+			res.end('no container header')
+			return
+		}
+
+		var id = req.headers['X-FLOCKER-CONTAINER']
+		emitter.emit('list', function(err, servers){
+			backends.ps(servers, '/containers/json?all=1', function(err, result, collection){
+				if(err){
+					res.statusCode = 500
+					res.end(err)
+					return
+				}
+				var address = utils.searchCollection(collection, id)
+				if(!address){
+					res.statusCode = 404
+					res.end('container: ' + id + ' not found')
+					return
+				}
+				emitter.emit('proxy', req, res, address)
+			})
+		})
+
+	}
+}
+
+
+/*
+
+	these are parallel and hit all dockers
+	
+*/
+function ping(emitter){
+	return function(req, res){
+		
+	}
+}
+
 
 /*
 
@@ -125,6 +153,7 @@ module.exports = function(){
 
 	emitter.createContainer = createContainer(emitter)
 	emitter.createImage = createImage(emitter)
+	emitter.containerRequest = containerRequest(emitter)
 	emitter.listContainers = listContainers(emitter)
 	emitter.ping = ping(emitter)
 	emitter.targeted = targeted(emitter)

@@ -41,17 +41,14 @@ function getAddress(container){
 var lastContainer = null
 
 dockers.on('route', function(info, next){
-
   if(info.container){
     lastContainer = info.name
   }
-  console.log(lastContainer)
-  console.log(getAddress(lastContainer))
   next(null, getAddress(lastContainer))
 })
 
 dockers.on('list', function(next){
-  next(null, allServers.splice(1))
+  next(null, allServers)
 })
 
 var server = http.createServer(function(req, res){

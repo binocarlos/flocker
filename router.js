@@ -37,7 +37,17 @@ module.exports = function(){
 
 	router.addRoute('/:version/containers/:id/start', {
 		POST:function(req, res, opts){
-			emitter.emit('containers:start', req, res)
+			setVersionHeader(req, opts.params.version)
+			setContainerHeader(req, opts.params.id)
+			emitter.emit('containers:request', req, res)
+		}
+	})
+
+	router.addRoute('/:version/containers/:id/attach', {
+		POST:function(req, res, opts){
+			setVersionHeader(req, opts.params.version)
+			setContainerHeader(req, opts.params.id)
+			emitter.emit('containers:request', req, res)
 		}
 	})
 

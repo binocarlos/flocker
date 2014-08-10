@@ -36,11 +36,8 @@ function mergeCollection(master, collection){
 }
 
 function singleps(address, url, done){
-	var req = hyperquest('http://' + address + url, {
-		headers:{
-			'Accept':'*/*'
-		}
-	}).pipe(concat(function(result){
+	var req = hyperquest('http://' + address + url)
+	.pipe(concat(function(result){
 		result = result.toString()
 		if(!result){
 			result = '[]'
