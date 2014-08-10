@@ -145,7 +145,9 @@ function createStub(name, done){
     '-d',
     '--name',
     name,
-    'binocarlos/bring-a-ping'
+    'binocarlos/bring-a-ping',
+    '--timeout',
+    '1000'
   ], done)
   
 }
@@ -153,19 +155,13 @@ function createStub(name, done){
 function createStubs(done){
   async.series([
     function(next){
-      createStub('stub1', done)
+      createStub('stub1', next)
     },
     function(next){
-      createStub('stub2', function(err, result){
-        console.log(result)
-        next()
-      })
+      createStub('stub2', next)
     },
     function(next){
-      createStub('stub3', function(err, result){
-        console.log(result)
-        next()
-      })
+      createStub('stub3', next)
     }
   ], done)
 }
@@ -194,7 +190,7 @@ tape('create stubs', function(t){
   })
 })
 
-/*
+
 tape('docker ps', function(t){
 
   runProxyDocker([
@@ -205,13 +201,16 @@ tape('docker ps', function(t){
       t.end()
       return
     }
+    console.log('-------------------------------------------');
+    console.log('-------------------------------------------');
+    console.log(result)
     t.ok(result.indexOf('stub1')>0, 'stub1')
     t.ok(result.indexOf('stub2')>0, 'stub1')
     t.ok(result.indexOf('stub3')>0, 'stub1')
     t.end()
   })
 })
-*/
+
 
 tape('destroy stubs', function(t){
   removeStubs(function(){
