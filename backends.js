@@ -10,15 +10,25 @@ function blankCollection(){
 	}
 	return ret
 }
-function createCollection(address, arr){
+function createCollection(backend, arr){
+	var address = backend.docker
+	var hostname = backend.hostname
 	var ret = blankCollection()
 	arr.forEach(function(proc){
-		(proc.Names || []).forEach(function(name){
-			ret.names[name] = address
-		})
 		var shortId = proc.Id.substr(0,12)
-		ret.ids[proc.Id] = address
-		ret.shortids[shortId] = address
+		var procNames = proc.Names || []
+		if(procNames.length>0){
+			procNames.push(procNames[0] + '@' + hostname)
+		}
+		else{
+			procNames.push(shortId + '@' + hostname)	
+		}
+		proc.Names = procNames
+		procNames.forEach(function(name){
+			ret.names[name] = hostname
+		})
+		ret.ids[proc.Id] = hostname
+		ret.shortids[shortId] = hostname
 	})
 	return ret
 }
@@ -56,14 +66,7 @@ function ps(backends, url, done){
 		var ret = []
 		var collection = blankCollection()
 		multiarr.forEach(function(arr, i){
-			mergeCollection(collection, createCollection(backends[i].hostname, arr))
-			var backend = backends[i]
-			arr = arr.map(function(container){
-				var names = container.Names || []
-				names.push(names[0] + '@' + backend.hostname)
-				container.Names = names
-				return container
-			})
+			mergeCollection(collection, createCollection(backends[i], arr))
 			ret = ret.concat(arr)
 		})
 		done(null, ret, collection)
