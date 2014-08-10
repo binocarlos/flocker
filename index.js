@@ -39,8 +39,9 @@ function Flocker(){
 	this.handlers.on('list', function(next){
 		self.emit('list', next)
 	})
-	this.router.on('containers:json', this.handlers.listContainers)
+	this.router.on('containers:ps', this.handlers.listContainers)
 	this.router.on('containers:create', this.handlers.createContainer)
+	this.router.on('containers:attach', this.handlers.attachContainer)
 	this.router.on('images:create', this.handlers.createImage)
 
 	// this is a generic handler for any request targeted at a specific container name

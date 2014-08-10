@@ -47,6 +47,32 @@ function createContainer(emitter){
 	}
 }
 
+function attachContainer(emitter){
+
+	return function(req, res){
+
+		loadContainerServerAddress(emitter, req, res, function(err, address){
+
+			var backend = hyperquest('http://' + address + req.url, {
+				method:'POST',
+				headers:req.headers
+			})
+
+			res.setHeader('transfer-encoding', '')
+			res.setHeader('connection', '')
+
+			backend.on('response', function(r){
+
+				res.setHeader('content-type', r.headers['content-type'])
+				res.statusCode = r.statusCode
+			})
+
+			req.pipe(backend).pipe(res)
+			
+		})
+	}
+}
+
 
 function createImage(emitter){
 	return function(req, res){
@@ -90,42 +116,48 @@ function listContainers(emitter){
 	}
 }
 
+function loadContainerServerAddress(emitter, req, res, done){
+
+	if(!req.headers['X-FLOCKER-CONTAINER']){
+		res.statusCode = 500
+		res.end('no container header')
+		return
+	}
+
+	var id = req.headers['X-FLOCKER-CONTAINER']
+
+	emitter.emit('list', function(err, servers){
+		backends.ps(servers, '/containers/json?all=1', function(err, result, collection){
+
+			if(err){
+				res.statusCode = 500
+				res.end(err)
+				return
+			}
+
+			// this is the name used when we get back to the real docker server
+			var actualname = id.split('@')[0]
+			req.url = req.url.replace(id, actualname)
+
+			var hostname = utils.searchCollection(collection, id)
+			var backend = utils.getServerByHostname(servers, hostname)
+			if(!backend){
+				res.statusCode = 404
+				res.end('container: ' + id + ' not found')
+				return
+			}
+			done(null, backend.docker)
+		})
+	})
+}
+
 
 
 function containerRequest(emitter){
 	return function(req, res){
 
-		if(!req.headers['X-FLOCKER-CONTAINER']){
-			res.statusCode = 500
-			res.end('no container header')
-			return
-		}
-
-		var id = req.headers['X-FLOCKER-CONTAINER']
-
-		emitter.emit('list', function(err, servers){
-			backends.ps(servers, '/containers/json?all=1', function(err, result, collection){
-
-				if(err){
-					res.statusCode = 500
-					res.end(err)
-					return
-				}
-
-				// this is the name used when we get back to the real docker server
-				var actualname = id.split('@')[0]
-				req.url = req.url.replace(id, actualname)
-
-				var hostname = utils.searchCollection(collection, id)
-				var backend = utils.getServerByHostname(servers, hostname)
-				if(!backend){
-					res.statusCode = 404
-					res.end('container: ' + id + ' not found')
-					return
-				}
-
-				emitter.emit('proxy', req, res, backend.docker)
-			})
+		loadContainerServerAddress(emitter, req, res, function(err, address){
+			emitter.emit('proxy', req, res, address)
 		})
 
 	}
@@ -161,6 +193,7 @@ module.exports = function(){
 	var emitter = new EventEmitter()
 
 	emitter.createContainer = createContainer(emitter)
+	emitter.attachContainer = attachContainer(emitter)
 	emitter.createImage = createImage(emitter)
 	emitter.containerRequest = containerRequest(emitter)
 	emitter.listContainers = listContainers(emitter)

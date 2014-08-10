@@ -22,9 +22,11 @@ module.exports = function(){
 	  }
 	})
 
-	router.addRoute('/images/create', {
-		POST:function(req, res, opts){
-			emitter.emit('images:create', req, res)
+
+	router.addRoute('/:version/containers/json', {
+		GET:function(req, res, opts){
+			setVersionHeader(req, opts.params.version)
+			emitter.emit('containers:ps', req, res)
 		}
 	})
 
@@ -35,11 +37,9 @@ module.exports = function(){
 		}
 	})
 
-	router.addRoute('/:version/containers/:id/start', {
+	router.addRoute('/images/create', {
 		POST:function(req, res, opts){
-			setVersionHeader(req, opts.params.version)
-			setContainerHeader(req, opts.params.id)
-			emitter.emit('containers:targetid', req, res)
+			emitter.emit('images:create', req, res)
 		}
 	})
 
@@ -47,33 +47,18 @@ module.exports = function(){
 		POST:function(req, res, opts){
 			setVersionHeader(req, opts.params.version)
 			setContainerHeader(req, opts.params.id)
-			emitter.emit('containers:targetid', req, res)
+			emitter.emit('containers:attach', req, res)
 		}
 	})
 
-	router.addRoute('/:version/containers/:id/json', {
-		GET:function(req, res, opts){
-			setVersionHeader(req, opts.params.version)
-			setContainerHeader(req, opts.params.id)
-			emitter.emit('containers:targetid', req, res)
-		}
+	// these requests are for a specific container therefore server
+	// let the backend docker work out HTTP methods
+	router.addRoute('/:version/containers/:id/:method', function(req, res, opts){
+		setVersionHeader(req, opts.params.version)
+		setContainerHeader(req, opts.params.id)
+		emitter.emit('containers:targetid', req, res)
 	})
-
-	router.addRoute('/:version/images/:id/json', {
-		GET:function(req, res, opts){
-			setVersionHeader(req, opts.params.version)
-			setContainerHeader(req, opts.params.id)
-			emitter.emit('containers:targetid', req, res)
-		}
-	})
-
-	router.addRoute('/:version/containers/json', {
-		GET:function(req, res, opts){
-			setVersionHeader(req, opts.params.version)
-			emitter.emit('containers:json', req, res)
-		}
-	})
-
+	
 	emitter.handler = router
 
 	return emitter
