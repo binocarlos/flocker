@@ -48,6 +48,13 @@ dockers.on('route', function(info, next){
 	}
 })
 
+dockers.on('map', function(name, containerJSON, imageJSON, next){
+
+	// here we can change properties of the container before it is launched
+	// we can also study the image for exposed ports and volumes
+	
+})
+
 var server = http.createServer(function(req, res){
 
 	// we can do custom auth/routing logic here
