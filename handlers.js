@@ -13,73 +13,44 @@ function createContainer(emitter){
 		var parsedURL = url.parse(req.url, true)
 		var name = parsedURL.query.name
 		var dockerVersion = req.headers['X-DOCKER-API-VERSION']
-		
-		// we need to grab the container JSON
-		// so we can make routing decisions
-		req.pipe(concat(function(container){
-			try{
-				container = JSON.parse(container.toString())	
-			} catch(err){
+
+		// check for double named containers
+		getContainerServerAddress(emitter, name, function(err, address){
+
+			if(err){
 				res.statusCode = 500
 				res.end(err)
 				return
 			}
-			var image = container.Image
 
-			// get the routing decision
-			emitter.emit('route', {
-				name:name,
-				image:image,
-				container:container
-			}, function(err, backend){
+			if(address){
+				res.statusCode = 500
+				res.end('container: ' + name + ' already exists on ' + address)
+				return
+			}
 
-				if(!backend){
-					err = 'no backend found'
-				}
-
-				if(err){
+			// we need to grab the container JSON
+			// so we can make routing decisions
+			req.pipe(concat(function(container){
+				try{
+					container = JSON.parse(container.toString())	
+				} catch(err){
 					res.statusCode = 500
 					res.end(err)
 					return
 				}
+				var image = container.Image
 
-				async.waterfall([
-					function(next){
+				// get the routing decision
+				emitter.emit('route', {
+					name:name,
+					image:image,
+					container:container
+				}, function(err, backend){
 
-						var address = dockerVersion ? backend.docker + '/' + dockerVersion : backend.docker
-						// now we want to check if the image is downloaded on the target machine
-						var req = hyperquest('http://' + address + '/images/' + image + '/json')
-
-						req.on('response', function(r){
-
-							// return the 404 back to the docker client
-							// this will result in a hit to /images/create next
-							if(r.statusCode==404){
-								res.statusCode = 404
-								res.end('no such image')
-								return
-							}
-							else{
-
-								r.pipe(concat(function(content){
-									content = JSON.parse(content.toString())
-									next(null, content)
-								}))
-								
-								
-							}
-						})
-
-						req.on('error', next)
-					},
-
-					function(imageInfo, next){
-
-						emitter.emit('map', name, container, imageInfo, next)
-						
+					if(!backend){
+						err = 'no backend found'
 					}
-
-				], function(err){
 
 					if(err){
 						res.statusCode = 500
@@ -87,12 +58,58 @@ function createContainer(emitter){
 						return
 					}
 
-					// re-create the request for the actual backend docker
-					var newreq = utils.cloneReq(req, JSON.stringify(container))
-					emitter.emit('proxy', newreq, res, backend.docker)
+					async.waterfall([
+						function(next){
+
+							var address = dockerVersion ? backend.docker + '/' + dockerVersion : backend.docker
+							// now we want to check if the image is downloaded on the target machine
+							var req = hyperquest('http://' + address + '/images/' + image + '/json')
+
+							req.on('response', function(r){
+
+								// return the 404 back to the docker client
+								// this will result in a hit to /images/create next
+								if(r.statusCode==404){
+									res.statusCode = 404
+									res.end('no such image')
+									return
+								}
+								else{
+
+									r.pipe(concat(function(content){
+										content = JSON.parse(content.toString())
+										next(null, content)
+									}))
+									
+									
+								}
+							})
+
+							req.on('error', next)
+						},
+
+						function(imageInfo, next){
+
+							emitter.emit('map', name, container, imageInfo, next)
+							
+						}
+
+					], function(err){
+
+						if(err){
+							res.statusCode = 500
+							res.end(err)
+							return
+						}
+
+						// re-create the request for the actual backend docker
+						var newreq = utils.cloneReq(req, JSON.stringify(container))
+						emitter.emit('proxy', newreq, res, backend.docker)
+					})
 				})
-			})
-		}))
+			}))
+		})
+		
 	}
 }
 
@@ -197,6 +214,24 @@ function listContainers(emitter){
 	}
 }
 
+function getContainerServerAddress(emitter, id, done){
+	emitter.emit('list', function(err, servers){
+		backends.ps(servers, '/containers/json?all=1', function(err, result, collection){
+
+			if(err){
+				return done(err)
+			}
+
+			var hostname = utils.searchCollection(collection, id)
+			var backend = utils.getServerByHostname(servers, hostname)
+			if(!backend){
+				return done()
+			}
+			done(null, backend.docker)
+		})
+	})
+}
+
 function loadContainerServerAddress(emitter, req, res, done){
 
 	if(!req.headers['X-FLOCKER-CONTAINER']){
@@ -207,28 +242,24 @@ function loadContainerServerAddress(emitter, req, res, done){
 
 	var id = req.headers['X-FLOCKER-CONTAINER']
 
-	emitter.emit('list', function(err, servers){
-		backends.ps(servers, '/containers/json?all=1', function(err, result, collection){
+	getContainerServerAddress(emitter, id, function(err, address){
+		if(err){
+			res.statusCode = 500
+			res.end(err)
+			return
+		}
 
-			if(err){
-				res.statusCode = 500
-				res.end(err)
-				return
-			}
+		if(!address){
+			res.statusCode = 404
+			res.end('container: ' + id + ' not found')
+			return
+		}
 
-			// this is the name used when we get back to the real docker server
-			var actualname = id.split('@')[0]
-			req.url = req.url.replace(id, actualname)
+		// this is the name used when we get back to the real docker server
+		var actualname = id.split('@')[0]
+		req.url = req.url.replace(id, actualname)
 
-			var hostname = utils.searchCollection(collection, id)
-			var backend = utils.getServerByHostname(servers, hostname)
-			if(!backend){
-				res.statusCode = 404
-				res.end('container: ' + id + ' not found')
-				return
-			}
-			done(null, backend.docker)
-		})
+		done(null, address)
 	})
 }
 

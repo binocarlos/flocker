@@ -159,9 +159,8 @@ function removeStubs(done){
   ], done)
 }
 
-
-function createStub(name, done){
-  runProxyDockerStream([
+function getStubArgs(name){
+  return [
     'run',
     '-d',
     '--name',
@@ -169,8 +168,11 @@ function createStub(name, done){
     'binocarlos/bring-a-ping',
     '--timeout',
     '1000'
-  ], done)
-  
+  ]
+}
+
+function createStub(name, done){
+  runProxyDockerStream(getStubArgs(name), done)
 }
 
 function createStubs(done){
@@ -214,8 +216,6 @@ tape('create stubs', function(t){
 
 tape('docker ps', function(t){
 
-
-
   runProxyDocker([
     'ps'
   ], function(err, result){
@@ -235,6 +235,15 @@ tape('docker ps', function(t){
     dockers.removeAllListeners('map')
     t.end()
   })
+})
+
+tape('no double named containers', function(t){
+
+  runProxyDocker(getStubArgs('stub2'), function(err){
+    t.ok(err.toString().indexOf('container: stub2 already exists on 192.168.8.121:2375')>0, 'error message has denied the container')
+    t.end()
+  })
+  
 })
 
 
