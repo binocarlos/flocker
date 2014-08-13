@@ -28,16 +28,21 @@ function Flocker(){
 		self.emit('route', info, next)
 	})
 
-	// handle a direct proxy
-	this.handlers.on('proxy', function(req, res, address){
-		req.headers['X-FLOCKER-HOST'] = address
-		self.backendsproxy(req, res)
+	this.handlers.on('map', function(name, container, image, next){
+		self.emit('map', name, container, image, next)
 	})
 
 	// we need a list of servers
 	this.handlers.on('list', function(next){
 		self.emit('list', next)
 	})
+
+	// handle a direct proxy
+	this.handlers.on('proxy', function(req, res, address){
+		req.headers['X-FLOCKER-HOST'] = address
+		self.backendsproxy(req, res)
+	})
+
 	this.router.on('containers:ps', this.handlers.listContainers)
 	this.router.on('containers:create', this.handlers.createContainer)
 	this.router.on('containers:attach', this.handlers.attachContainer)

@@ -2,7 +2,9 @@ var url = require('url')
 var EventEmitter = require('events').EventEmitter
 var concat = require('concat-stream')
 var net = require('net')
+var async = require('async')
 var utils = require('./utils')
+var hyperquest = require('hyperquest')
 var backends = require('./backends')
 
 function createContainer(emitter){
@@ -10,6 +12,7 @@ function createContainer(emitter){
 	return function(req, res){
 		var parsedURL = url.parse(req.url, true)
 		var name = parsedURL.query.name
+		var dockerVersion = req.headers['X-DOCKER-API-VERSION']
 		
 		// we need to grab the container JSON
 		// so we can make routing decisions
@@ -23,12 +26,16 @@ function createContainer(emitter){
 			}
 			var image = container.Image
 
-			// get the routing done
+			// get the routing decision
 			emitter.emit('route', {
 				name:name,
 				image:image,
 				container:container
 			}, function(err, backend){
+
+				if(!backend){
+					err = 'no backend found'
+				}
 
 				if(err){
 					res.statusCode = 500
@@ -36,37 +43,100 @@ function createContainer(emitter){
 					return
 				}
 
-				// re-create the request for the actual backend docker
-				var newreq = utils.cloneReq(req, JSON.stringify(container))
+				async.waterfall([
+					function(next){
+						// now we want to check if the image is downloaded on the target machine
+						var req = hyperquest('http://' + backend.docker + '/' + dockerVersion + '/images/' + image + '/json')
 
-				emitter.emit('proxy', newreq, res, backend.docker)
+						req.on('response', function(r){
+
+							// return the 404 back to the docker client
+							// this will result in a hit to /images/create next
+							if(r.statusCode==404){
+								res.statusCode = 404
+								res.end('no such image')
+								return
+							}
+							else{
+
+								r.pipe(concat(function(content){
+									content = JSON.parse(content.toString())
+									next(null, content)
+								}))
+								
+								
+							}
+						})
+
+						req.on('error', next)
+					},
+
+					function(imageInfo, next){
+
+						emitter.emit('map', name, container, imageInfo, next)
+						
+					}
+
+				], function(err){
+
+					if(err){
+						res.statusCode = 500
+						res.end(err)
+						return
+					}
+
+					// re-create the request for the actual backend docker
+					var newreq = utils.cloneReq(req, JSON.stringify(container))
+					emitter.emit('proxy', newreq, res, backend.docker)
+				})
 			})
 		}))
 	}
 }
 
+function createImage(emitter){
+	return function(req, res){
+
+		var parsedURL = url.parse(req.url, true)
+		var image = parsedURL.query.fromImage
+
+		// TODO emit 'auth' event so PaaS can load registry logins
+		emitter.emit('route', {
+			image:image
+		}, function(err, backend){
+			if(err){
+				res.statusCode = 500
+				res.end(err)
+				return
+			}
+			emitter.emit('proxy', req, res, backend.docker)
+		})
+
+	}
+}
+
+
+/*
+
+	this needs some work to allow for data to be piped into containers
+
+	as soon as the response headers are written - the docker client starts streaming
+	input assuming the attach is setup and buffering
+
+	however - getting to that stream once the response headers have been sent seems hard in node
+
+	the solution could be to have 2 sockets listening with some basic HTTP parsing
+	to check if its an attach method and if not then tcp proxy to the HTTP server
+
+	seems complicated though - so gonna leave it for now
+
+	the main idea is to boot servers anyway but piping data into containers dynamically
+	allocated is cool
+	
+*/
 function attachContainer(emitter){
 
 	return function(req, res){
-
-		/*
-		
-			this needs some work to allow for data to be piped into containers
-
-			as soon as the response headers are written - the docker client starts streaming
-			input assuming the attach is setup and buffering
-
-			however - getting to that stream once the response headers have been sent seems hard in node
-
-			the solution could be to have 2 sockets listening with some basic HTTP parsing
-			to check if its an attach method and if not then tcp proxy to the HTTP server
-
-			seems complicated though - so gonna leave it for now
-
-			the main idea is to boot servers anyway but piping data into containers dynamically
-			allocated is cool
-			
-		*/
 
 		loadContainerServerAddress(emitter, req, res, function(err, address){
 
@@ -102,26 +172,7 @@ function attachContainer(emitter){
 }
 
 
-function createImage(emitter){
-	return function(req, res){
 
-		var parsedURL = url.parse(req.url, true)
-		var image = parsedURL.query.fromImage
-
-		// TODO emit 'auth' event so PaaS can load registry logins
-		emitter.emit('route', {
-			image:image
-		}, function(err, backend){
-			if(err){
-				res.statusCode = 500
-				res.end(err)
-				return
-			}
-			emitter.emit('proxy', req, res, backend.docker)
-		})
-
-	}
-}
 
 function listContainers(emitter){
 	return function(req, res){

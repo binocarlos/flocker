@@ -92,11 +92,28 @@ Call next with a string representing the docker server to send the request to e.
 Any changes made to the info will apply to the forwarded request - this lets you intercepts create requests and route them where you choose and change environment variables etc
 
 ```js
-dockers.on('allocate', function(info, next){
+dockers.on('route', function(info, next){
 	doSomeAsyncStuff(function(err, meta){
 		info.container.name = meta.name
 		next(null, meta.server)
 	})
+})
+```
+
+#### `dockers.on('map', function(name, containerJSON, imageJSON, next){})`
+
+Called just before calling /containers/create but once the image has been downloaded onto the machine
+
+You can change the properties of container - image is immutable but contains the data for the image (this can be used to discover ports from within the Dockerfile not mentioned in the docker run command)
+
+
+```js
+dockers.on('map', function(name, containerJSON, imageJSON, next){
+
+	// change properties of the container
+	// read properties of the image
+
+	next()
 })
 ```
 
@@ -123,7 +140,7 @@ dockers.on('list', function(next){
 })
 ```
 
-#### `httpAllowHalfOpen`
+#### `server.httpAllowHalfOpen`
 
 Because of the way docker attach works - you must set this property to true on the http server to allow attach traffic to travel via the proxy
 

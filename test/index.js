@@ -39,6 +39,22 @@ dockers.on('request', function(req, res){
   console.dir(req.url)
 })
 
+dockers.on('map', function(name, container, image, next){
+  if(!name.match(/^stub/)){
+    throw new Error('stub name map')
+  }
+
+  if(container.Image!='binocarlos/bring-a-ping'){
+    throw new Error('container image map')
+  }
+
+  if(image.Config.Entrypoint[1]!='cli.js'){
+    throw new Error('image entrypoint map')
+  }
+
+  next()
+})
+
 function getAddress(container){
   return allServers[parseInt(container.replace(/\D/g, ''))-1]
 }
@@ -50,6 +66,7 @@ dockers.on('route', function(info, next){
   }
   next(null, getAddress(lastContainer))
 })
+
 
 dockers.on('list', function(next){
   next(null, allServers)
@@ -197,6 +214,8 @@ tape('create stubs', function(t){
 
 tape('docker ps', function(t){
 
+
+
   runProxyDocker([
     'ps'
   ], function(err, result){
@@ -212,6 +231,8 @@ tape('docker ps', function(t){
     t.ok(result.indexOf('stub2@node2')>0, 'stub2@node2')
     t.ok(result.indexOf('stub3')>0, 'stub3')
     t.ok(result.indexOf('stub3@node3')>0, 'stub3@node3')
+
+    dockers.removeAllListeners('map')
     t.end()
   })
 })
