@@ -14,6 +14,12 @@ function createContainer(emitter){
 		var name = parsedURL.query.name
 		var dockerVersion = req.headers['X-DOCKER-API-VERSION']
 
+		if(!name){
+			res.statusCode = 500
+			res.end('please supply a --name flag for the container')
+			return
+		}
+
 		// check for double named containers
 		getContainerServerAddress(emitter, name, function(err, address){
 

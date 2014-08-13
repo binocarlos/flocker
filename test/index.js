@@ -247,6 +247,22 @@ tape('no double named containers', function(t){
 })
 
 
+tape('ensure containers have a name', function(t){
+
+  runProxyDocker([
+    'run',
+    '-d',
+    'binocarlos/bring-a-ping',
+    '--timeout',
+    '1000'
+  ], function(err){
+    t.ok(err.toString().indexOf('please supply a --name flag for the container')>0, 'error message has rejected no name')
+    t.end()
+  })
+  
+})
+
+
 tape('destroy stubs', function(t){
   removeStubs(function(){
     t.end()
