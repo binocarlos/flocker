@@ -45,8 +45,10 @@ function createContainer(emitter){
 
 				async.waterfall([
 					function(next){
+
+						var address = dockerVersion ? backend.docker + '/' + dockerVersion : backend.docker
 						// now we want to check if the image is downloaded on the target machine
-						var req = hyperquest('http://' + backend.docker + '/' + dockerVersion + '/images/' + image + '/json')
+						var req = hyperquest('http://' + address + '/images/' + image + '/json')
 
 						req.on('response', function(r){
 

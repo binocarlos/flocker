@@ -77,7 +77,8 @@ function ps(backends, url, done){
 }
 
 function imageinfo(address, version, name, done){
-	var req = hyperquest('http://' + address + '/' + version + '/images/' + name + '/json').pipe(concat(function(result){
+	address = version ? address + '/' + version : address
+	var req = hyperquest('http://' + address + '/images/' + name + '/json').pipe(concat(function(result){
 		done(null, JSON.parse(result.toString()))
 	}))
 	req.on('error', done)

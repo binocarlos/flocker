@@ -22,50 +22,66 @@ module.exports = function(){
 	  }
 	})
 
-
-	router.addRoute('/:version/containers/json', {
+	var containerjson = {
 		GET:function(req, res, opts){
 			setVersionHeader(req, opts.params.version)
 			emitter.emit('containers:ps', req, res)
 		}
-	})
+	}
 
-	router.addRoute('/:version/containers/create', {
+	var containerCreate = {
 		POST:function(req, res, opts){
 			setVersionHeader(req, opts.params.version)
 			emitter.emit('containers:create', req, res)
 		}
-	})
+	}
 
-	router.addRoute('/images/create', {
+	var imageCreate = {
 		POST:function(req, res, opts){
 			emitter.emit('images:create', req, res)
 		}
-	})
+	}
 
-	router.addRoute('/:version/containers/:id/attach', {
+	var attach = {
 		POST:function(req, res, opts){
 			setVersionHeader(req, opts.params.version)
 			setContainerHeader(req, opts.params.id)
 			emitter.emit('containers:attach', req, res)
 		}
-	})
+	}
 
-	router.addRoute('/:version/containers/:id', {
+	var deleteContainer = {
 		DELETE:function(req, res, opts){
 			setVersionHeader(req, opts.params.version)
 			setContainerHeader(req, opts.params.id)
 			emitter.emit('containers:targetid', req, res)
 		}
-	})
+	}
 
-	// these requests are for a specific container therefore server
-	// let the backend docker work out HTTP methods
-	router.addRoute('/:version/containers/:id/:method', function(req, res, opts){
+	var targetedContainer = function(req, res, opts){
 		setVersionHeader(req, opts.params.version)
 		setContainerHeader(req, opts.params.id)
 		emitter.emit('containers:targetid', req, res)
-	})
+	}
+
+	router.addRoute('/:version/containers/json', containerjson)
+	router.addRoute('/containers/json', containerjson)
+
+	router.addRoute('/:version/containers/create', containerCreate)
+	router.addRoute('/containers/create', containerCreate)
+
+	router.addRoute('/images/create', imageCreate)
+
+	router.addRoute('/:version/containers/:id/attach', attach)
+	router.addRoute('/containers/:id/attach', attach)
+
+	router.addRoute('/:version/containers/:id', deleteContainer)
+	router.addRoute('/containers/:id', deleteContainer)
+
+	// these requests are for a specific container therefore server
+	// let the backend docker work out HTTP methods
+	router.addRoute('/:version/containers/:id/:method', targetedContainer)
+	router.addRoute('/containers/:id/:method', targetedContainer)
 	
 	emitter.handler = router
 
