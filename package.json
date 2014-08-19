@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "concat-stream": "^1.4.6",
+    "dockers-ps": "^0.1.0",
     "from2": "^1.2.0",
     "hyperprox": "^2.0.0",
     "hyperquest": "^0.3.0",

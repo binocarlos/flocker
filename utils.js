@@ -1,5 +1,9 @@
 var from = require('from2')
 
+function collectionKey(st, isName){
+	return 'container:' + (isName ? '/' : '') + st
+}
+
 // make a readable stream from a string
 function fromString(string) {
   return from(function(size, next) {
@@ -19,28 +23,9 @@ function cloneReq(req, newContent){
 	return newReq
 }
 
-function searchCollection(collection, name){
-	return collection.ids[collectionKey(name)] || collection.shortids[collectionKey(name)] || collection.names[collectionKey(name, true)]
-}
-
-function collectionKey(st, isName){
-	return 'container:' + (isName ? '/' : '') + st
-}
-
-function getServerByHostname(servers, hostname){
-	var backend = null
-	servers.forEach(function(b){
-		if(b.hostname==hostname){
-			backend = b
-		}
-	})
-	return backend
-}
 
 module.exports = {
-	cloneReq:cloneReq,
-	fromString:fromString,
-	searchCollection:searchCollection,
 	collectionKey:collectionKey,
-	getServerByHostname:getServerByHostname
+	cloneReq:cloneReq,
+	fromString:fromString
 }

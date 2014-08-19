@@ -3,9 +3,9 @@ var EventEmitter = require('events').EventEmitter
 var concat = require('concat-stream')
 var net = require('net')
 var async = require('async')
+var dockersps = require('dockers-ps')
 var utils = require('./utils')
 var hyperquest = require('hyperquest')
-var backends = require('./backends')
 
 function createContainer(emitter){
 
@@ -201,40 +201,28 @@ function attachContainer(emitter){
 
 function listContainers(emitter){
 	return function(req, res){
-		emitter.emit('list', function(err, servers){
+		emitter.cluster.ps(function(err, result, collection){
 			if(err){
 				res.statusCode = 500
 				res.end(err)
 				return
 			}
-			backends.ps(servers, req.url, function(err, result, collection){
-				if(err){
-					res.statusCode = 500
-					res.end(err)
-					return
-				}
-				res.setHeader('content-type', 'application/json')
-				res.end(JSON.stringify(result))
-			})
+			res.setHeader('content-type', 'application/json')
+			res.end(JSON.stringify(result))
 		})
 	}
 }
 
 function getContainerServerAddress(emitter, id, done){
-	emitter.emit('list', function(err, servers){
-		backends.ps(servers, '/containers/json?all=1', function(err, result, collection){
+	emitter.cluster.find(id, function(err, backend){
+		if(err){
+			return done(err)
+		}
 
-			if(err){
-				return done(err)
-			}
-
-			var hostname = utils.searchCollection(collection, id)
-			var backend = utils.getServerByHostname(servers, hostname)
-			if(!backend){
-				return done()
-			}
-			done(null, backend.docker)
-		})
+		if(!backend){
+			return done()
+		}
+		done(null, backend.docker)		
 	})
 }
 
@@ -290,6 +278,10 @@ module.exports = function(){
 	emitter.createImage = createImage(emitter)
 	emitter.targetid = targetid(emitter)
 	emitter.listContainers = listContainers(emitter)
+
+	emitter.cluster = dockersps(function(done){
+		emitter.emit('list', done)
+	})
 
 	return emitter
 
