@@ -55,6 +55,13 @@ dockers.on('map', function(name, containerJSON, imageJSON, next){
 	
 })
 
+dockers.on('start', function(name, containerJSON, imageJSON, bootJSON, next){
+
+	// here we can change properties of the bootJSON record
+	// the container and image have been created and so are immutable
+	
+})
+
 var server = http.createServer(function(req, res){
 
 	// we can do custom auth/routing logic here
@@ -119,6 +126,25 @@ dockers.on('map', function(name, containerJSON, imageJSON, next){
 
 	// change properties of the container
 	// read properties of the image
+
+	next()
+})
+```
+
+
+#### `dockers.on('start', function(name, containerJSON, imageJSON, bootJSON, next){})`
+
+Called when a request to /containers/start is captured.
+
+containerJSON and imageJSON are the records loaded from the already routed docker server and are immutable.
+
+bootJSON is the JSON body of the /containers/start request and can be changed
+
+```js
+dockers.on('map', function(name, containerJSON, imageJSON, bootJSON, next){
+
+	// change properties of the bootJSON
+	// read properties of the image and container
 
 	next()
 })
