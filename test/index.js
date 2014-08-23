@@ -70,6 +70,9 @@ dockers.on('map', function(name, container, image, next){
     throw new Error('image entrypoint map')
   }
 
+  // test changing the request
+  container.Env.push('TESTAPPLES=20')
+
   next()
 })
 
