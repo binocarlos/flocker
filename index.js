@@ -32,6 +32,10 @@ function Flocker(){
 		self.emit('map', name, container, image, next)
 	})
 
+	this.handlers.on('start', function(name, container, image, bootRecord, next){
+		self.emit('start', name, container, image, bootRecord, next)
+	})
+
 	// we need a list of servers
 	this.handlers.on('list', function(next){
 		self.emit('list', next)
@@ -45,6 +49,7 @@ function Flocker(){
 
 	this.router.on('containers:ps', this.handlers.listContainers)
 	this.router.on('containers:create', this.handlers.createContainer)
+	this.router.on('containers:start', this.handlers.startContainer)
 	this.router.on('containers:attach', this.handlers.attachContainer)
 	this.router.on('images:create', this.handlers.createImage)
 

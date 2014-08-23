@@ -95,7 +95,7 @@ function createContainer(emitter){
 						},
 
 						function(imageInfo, next){
-
+							
 							emitter.emit('map', name, container, imageInfo, next)
 							
 						}
@@ -116,6 +116,127 @@ function createContainer(emitter){
 			}))
 		})
 		
+	}
+}
+
+function startContainer(emitter){
+
+	return function(req, res){
+		var dockerVersion = req.headers['X-DOCKER-API-VERSION']
+		var containerID = req.headers['X-FLOCKER-CONTAINER']
+
+		getContainerServer(emitter, containerID, function(err, backend){
+
+			if(err){
+				res.statusCode = 500
+				res.end(err.toString())
+				return
+			}
+
+			// we need to grab the container JSON
+			// so we can make routing decisions
+			req.pipe(concat(function(startInfo){
+
+				// bootRecord is the final packet sent to /start
+				// we can load the container then image data based on the container id
+				var bootRecord = null
+				var image = null
+				var container = null
+
+				try{
+					bootRecord = JSON.parse(startInfo.toString())	
+				} catch(err){
+					res.statusCode = 500
+					res.end(err)
+					return
+				}
+
+				async.series([
+
+					/*
+					
+						LOAD CONTAINER
+						
+					*/
+					function(next){
+
+						var address = dockerVersion ? backend.docker + '/' + dockerVersion : backend.docker
+
+						// now we want to check if the image is downloaded on the target machine
+						var req = hyperquest('http://' + address + '/containers/' + containerID + '/json')
+
+						req.on('response', function(r){
+
+							// return the 404 back to the docker client
+							// this will result in a hit to /images/create next
+							if(r.statusCode==404){
+								res.statusCode = 500
+								res.end('no such container: ' + containerID)
+								return
+							}
+							else{
+
+								r.pipe(concat(function(content){
+									container = JSON.parse(content.toString())
+									next()
+								}))
+							}
+						})
+
+						req.on('error', next)
+					},
+
+
+					function(next){
+
+						var address = dockerVersion ? backend.docker + '/' + dockerVersion : backend.docker
+
+						// now we want to check if the image is downloaded on the target machine
+						var req = hyperquest('http://' + address + '/images/' + container.Config.Image + '/json')
+
+						req.on('response', function(r){
+
+							// return the 404 back to the docker client
+							// this will result in a hit to /images/create next
+							if(r.statusCode==404){
+								res.statusCode = 500
+								res.end('no such image found: ' + container.Image + ' for ' + containerID)
+								return
+							}
+							else{
+
+								r.pipe(concat(function(content){
+									image = JSON.parse(content.toString())
+									next()
+								}))
+								
+							}
+						})
+
+						req.on('error', next)
+					},
+
+					function(next){
+
+						emitter.emit('start', container.Name.replace(/^\//, ''), container, image, bootRecord, next)
+						
+					}
+
+				], function(err){
+
+					if(err){
+						res.statusCode = 500
+						res.end(err.toString())
+						return
+					}
+
+					// re-create the request for the actual backend docker
+					var newreq = utils.cloneReq(req, JSON.stringify(bootRecord))
+					emitter.emit('proxy', newreq, res, backend.docker)
+				})
+
+			}))
+		})
 	}
 }
 
@@ -213,7 +334,7 @@ function listContainers(emitter){
 	}
 }
 
-function getContainerServerAddress(emitter, id, done){
+function getContainerServer(emitter, id, done){
 	emitter.cluster.find(id, function(err, backend){
 		if(err){
 			return done(err)
@@ -222,7 +343,14 @@ function getContainerServerAddress(emitter, id, done){
 		if(!backend){
 			return done()
 		}
-		done(null, backend.docker)		
+		done(null, backend)		
+	})
+}
+
+function getContainerServerAddress(emitter, id, done){
+	getContainerServer(emitter, id, function(err, server){
+		if(err) return done(err)
+		done(null, server ? server.docker : null)
 	})
 }
 
@@ -274,6 +402,7 @@ module.exports = function(){
 	var emitter = new EventEmitter()
 
 	emitter.createContainer = createContainer(emitter)
+	emitter.startContainer = startContainer(emitter)
 	emitter.attachContainer = attachContainer(emitter)
 	emitter.createImage = createImage(emitter)
 	emitter.targetid = targetid(emitter)

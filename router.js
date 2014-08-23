@@ -36,6 +36,14 @@ module.exports = function(){
 		}
 	}
 
+	var containerStart = {
+		POST:function(req, res, opts){
+			setVersionHeader(req, opts.params.version)
+			setContainerHeader(req, opts.params.id)
+			emitter.emit('containers:start', req, res)
+		}
+	}
+
 	var imageCreate = {
 		POST:function(req, res, opts){
 			emitter.emit('images:create', req, res)
@@ -69,6 +77,9 @@ module.exports = function(){
 
 	router.addRoute('/:version/containers/create', containerCreate)
 	router.addRoute('/containers/create', containerCreate)
+
+	router.addRoute('/:version/containers/:id/start', containerStart)
+	router.addRoute('/containers/:id/start', containerStart)
 
 	router.addRoute('/images/create', imageCreate)
 

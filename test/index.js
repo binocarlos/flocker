@@ -32,11 +32,29 @@ var allServers = [{
   docker:'192.168.8.122:2375'
 }]
 
+function getAddress(container){
+  return allServers[parseInt(container.replace(/\D/g, ''))-1]
+}
+var lastContainer = null
+
+
 var dockers = flocker()
 
 dockers.on('request', function(req, res){
   console.log(req.method)
   console.dir(req.url)
+})
+
+dockers.on('route', function(info, next){
+  if(info.container){
+    lastContainer = info.name
+  }
+  next(null, getAddress(lastContainer))
+})
+
+
+dockers.on('list', function(next){
+  next(null, allServers)
 })
 
 dockers.on('map', function(name, container, image, next){
@@ -55,22 +73,26 @@ dockers.on('map', function(name, container, image, next){
   next()
 })
 
-function getAddress(container){
-  return allServers[parseInt(container.replace(/\D/g, ''))-1]
-}
-var lastContainer = null
-
-dockers.on('route', function(info, next){
-  if(info.container){
-    lastContainer = info.name
+dockers.on('start', function(name, container, image, bootRecord, next){
+  if(!name.match(/^stub/)){
+    throw new Error('stub name map')
   }
-  next(null, getAddress(lastContainer))
+
+  if(container.Config.Image!='binocarlos/bring-a-ping'){
+    throw new Error('container image map')
+  }
+
+  if(image.Config.WorkingDir!='/srv/app'){
+    throw new Error('image record')
+  }
+
+  if(bootRecord.Privileged!==false){
+    throw new Error('boot record')
+  }
+
+  next()
 })
 
-
-dockers.on('list', function(next){
-  next(null, allServers)
-})
 
 var server = http.createServer(function(req, res){
   dockers.handle(req, res)
