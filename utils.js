@@ -19,10 +19,10 @@ function cloneReq(req, newContent){
 	var newReq = fromString(newContent)
 	newReq.url = req.url
 	newReq.method = req.method
-	newReq.headers = req.headers
+	newReq.headers = req.headers || {}
+	newReq.headers['content-length'] = newContent.length
 	return newReq
 }
-
 
 module.exports = {
 	collectionKey:collectionKey,
