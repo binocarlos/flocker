@@ -412,6 +412,10 @@ module.exports = function(){
 		emitter.emit('list', done)
 	})
 
+	emitter.find = function(name, done){
+		emitter.cluster.find(name, done)
+	}
+
 	return emitter
 
 }

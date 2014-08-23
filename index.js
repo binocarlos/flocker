@@ -69,6 +69,12 @@ Flocker.prototype.handle = function(req, res){
 	this.router.handler(req, res)
 }
 
+Flocker.prototype.find = function(name, done){
+
+	this.handlers.find(name, done)
+	
+}
+
 module.exports = function(){
 	return new Flocker()
 }

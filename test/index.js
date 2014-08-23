@@ -285,6 +285,23 @@ tape('ensure containers have a name', function(t){
 })
 
 
+
+tape('find a container', function(t){
+
+  dockers.find('stub1', function(err, server){
+    if(err){
+      t.fail(err, 'find')
+      t.end()
+      return
+    }
+    t.equal(server.hostname, 'node1', 'container is on node1')
+    t.end()
+  })
+  
+})
+
+
+
 tape('destroy stubs', function(t){
   removeStubs(function(){
     t.end()
