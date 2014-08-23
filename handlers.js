@@ -54,7 +54,7 @@ function createContainer(emitter){
 					container:container
 				}, function(err, backend){
 
-					if(!backend){
+					if(!err && !backend){
 						err = 'no backend found'
 					}
 
